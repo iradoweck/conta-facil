@@ -115,21 +115,28 @@ class DashboardScreen extends ConsumerWidget {
     final filter = ref.watch(dashFilterProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SegmentedButton<bool?>(
-        segments: const [
-          ButtonSegment(value: true, label: Text('Negócio'), icon: Icon(Icons.business_center)),
-          ButtonSegment(value: false, label: Text('Pessoal'), icon: Icon(Icons.person)),
-          ButtonSegment(value: null, label: Text('Ambos'), icon: Icon(Icons.all_inclusive)),
-        ],
-        selected: {filter},
-        onSelectionChanged: (newSelection) {
-          ref.read(dashFilterProvider.notifier).state = newSelection.first;
-        },
-        style: SegmentedButton.styleFrom(
-          backgroundColor: Colors.white,
-          selectedBackgroundColor: AppColors.primary.withOpacity(0.1),
-          selectedForegroundColor: AppColors.primary,
-          side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+      child: SizedBox(
+        width: double.infinity,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: SegmentedButton<bool?>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('Negócio'), icon: Icon(Icons.business_center)),
+              ButtonSegment(value: false, label: Text('Pessoal'), icon: Icon(Icons.person)),
+              ButtonSegment(value: null, label: Text('Ambos'), icon: Icon(Icons.all_inclusive)),
+            ],
+            selected: {filter},
+            onSelectionChanged: (newSelection) {
+              ref.read(dashFilterProvider.notifier).state = newSelection.first;
+            },
+            style: SegmentedButton.styleFrom(
+              backgroundColor: Colors.white,
+              selectedBackgroundColor: AppColors.primary.withOpacity(0.1),
+              selectedForegroundColor: AppColors.primary,
+              side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+            ),
+          ),
         ),
       ),
     );
