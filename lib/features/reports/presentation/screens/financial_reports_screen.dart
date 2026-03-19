@@ -94,9 +94,11 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
           Expanded(
             child: transactionsAsync.when(
               data: (transactions) {
+                final reportStart = DateTime(_startDate.year, _startDate.month, _startDate.day);
+                final reportEnd = DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59);
+                
                 final filtered = transactions.where((t) {
-                  final inRange = t.date.isAfter(_startDate.subtract(const Duration(seconds: 1))) && 
-                                 t.date.isBefore(_endDate.add(const Duration(days: 1)));
+                  final inRange = !t.date.isBefore(reportStart) && !t.date.isAfter(reportEnd);
                   final inContext = _isBusiness == null || t.isBusiness == _isBusiness;
                   return inRange && inContext;
                 }).toList();

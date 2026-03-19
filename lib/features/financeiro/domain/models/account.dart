@@ -29,7 +29,7 @@ class Account {
       id: json['id'],
       name: json['name'],
       type: AccountType.values.byName(json['type']),
-      balance: json['balance'],
+      balance: (json['balance'] as num).toDouble(),
     );
   }
 }

@@ -63,6 +63,8 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _buildBalanceCard(context, balance, totalIncome, totalExpense, currencyFormat),
               const SizedBox(height: 16),
+              _buildGoalProgressCard(context, ref, totalIncome, currencyFormat),
+              const SizedBox(height: 16),
               _buildActionGrid(context),
               const SizedBox(height: 24),
               _buildSectionHeader(context, 'Resumo do Mês', onVerTudo: () {
@@ -75,7 +77,7 @@ class DashboardScreen extends ConsumerWidget {
               }),
               _buildRecentTransactions(context, transactionsAsync, currencyFormat, ref),
               const SizedBox(height: 24),
-              _buildSectionHeader(context, 'Dicas & Aprendizado'),
+              _buildSectionHeader(context, 'Sabedoria do Edmilson & IA'),
               _buildEducationPreview(context),
               const SizedBox(height: 40),
             ],
@@ -219,7 +221,7 @@ class DashboardScreen extends ConsumerWidget {
               _buildActionButton(context, Icons.calculate_outlined, 'Fiscal', AppColors.warning, () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaxSimulatorScreen()));
               }),
-              _buildActionButton(context, Icons.chat_bubble_outline, 'Chat', AppColors.primary, () {
+              _buildActionButton(context, Icons.chat_bubble_outline, 'Parceiro AI', AppColors.primary, () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatScreen()));
               }),
             ],
@@ -363,7 +365,11 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey),
                   SizedBox(height: 16),
-                  Text('Nenhuma transação encontrada.', style: TextStyle(color: Colors.grey)),
+                  Text(
+                    'Ainda não começamos? Vamos registar o primeiro\nganho ou gasto juntos!', 
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -464,6 +470,83 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildGoalProgressCard(BuildContext context, WidgetRef ref, double income, NumberFormat fmt) {
+    final settings = ref.watch(userSettingsProvider);
+    final target = settings.minMonthlyBalance;
+    
+    if (target <= 0) return const SizedBox.shrink();
+
+    final progress = (income / target).clamp(0.0, 1.0);
+    final percentage = (progress * 100).toInt();
+    
+    String message = "Vamos começar a faturar?";
+    Color progressColor = Colors.grey;
+
+    if (progress >= 1.0) {
+      message = "Meta Batida! 🏆 Orgulho!";
+      progressColor = AppColors.success;
+    } else if (progress >= 0.7) {
+      message = "Quase lá! Falta pouco! 🚀";
+      progressColor = Colors.orange;
+    } else if (progress >= 0.3) {
+      message = "Bom ritmo! Força parceiro!";
+      progressColor = AppColors.primary;
+    } else if (progress > 0) {
+      message = "Primeiros passos rumo à meta!";
+      progressColor = Colors.blue;
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Meta Mensal: ${fmt.format(target)}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              Text(
+                '$percentage%',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: progressColor,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.grey.withOpacity(0.1),
+              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+          ),
+        ],
       ),
     );
   }

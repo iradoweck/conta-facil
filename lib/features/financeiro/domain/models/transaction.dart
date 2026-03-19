@@ -40,7 +40,7 @@ class Transaction {
     return Transaction(
       id: json['id'],
       title: json['title'],
-      amount: json['amount'],
+      amount: (json['amount'] as num).toDouble(),
       date: DateTime.parse(json['date']),
       type: TransactionType.values.byName(json['type']),
       category: json['category'],

@@ -20,7 +20,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final List<ChatMessage> _messages = [
     ChatMessage(
-      text: "Olá! Sou o assistente do Conta Fácil. Posso ajudar com dúvidas sobre ISPC, IVA ou gestão do seu negócio em Moçambique. O que deseja saber?",
+      text: "Olá, parceiro! Que bom te ver por aqui. Eu e o Edmilson estamos prontos para ajudar o seu negócio e as suas finanças a crescerem. O que vamos organizar hoje?",
       isUser: false,
     ),
   ];
@@ -30,9 +30,9 @@ class _ChatScreenState extends State<ChatScreen> {
   
   final List<String> _suggestions = [
     "Como pagar ISPC?",
-    "Limite do ISPC",
-    "Dicas de Poupança",
-    "Falar com Edmilson"
+    "Dicas para o Negócio",
+    "Falar com Edmilson",
+    "Analise minhas contas"
   ];
 
   void _handleSend([String? text]) async {
@@ -46,19 +46,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
     _scrollToBottom();
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 1200));
     
-    String response = "Interessante! Para este ponto específico, recomendo consultar o nosso Guia Fiscal no menu anterior ou falar com o especialista Edmilson Muacigarro.";
+    String response = "Excelente ponto! Vamos analisar isso juntos. O Edmilson sempre diz que o segredo está nos detalhes. Quer que eu verifique algo específico no seu fluxo?";
     
     final lowerText = messageText.toLowerCase();
     if (lowerText.contains("ispc") || lowerText.contains("limite")) {
-      response = "O limite do ISPC em Moçambique é de 2.500.000 MT anuais. Se ultrapassar, deverá transitar para o regime geral (IVA/IRPC). Quer que eu ajude a calcular?";
+      response = "Olha, para o ISPC em Moçambique, o limite é de 2.500.000 MT/ano. É um regime ótimo para quem está a crescer como você! Se precisar, podemos simular se já está perto desse valor.";
     } else if (lowerText.contains("pagar") || lowerText.contains("como")) {
-      response = "O pagamento do ISPC pode ser feito via Guia de Recolhimento nas recebedorias de impostos ou canais bancários autorizados até ao dia 15 do mês seguinte ao trimestre.";
-    } else if (lowerText.contains("dica") || lowerText.contains("poupança")) {
-      response = "Uma dica de ouro: Reserve sempre 3% de cada venda imediatamente numa conta separada. Assim, o imposto já estará garantido no fim do trimestre!";
+      response = "Podemos resolver isso fácil! O pagamento é trimestral via Guia de Recolhimento. Eu posso te avisar quando a data estiver próxima, o que acha?";
+    } else if (lowerText.contains("dica") || lowerText.contains("negócio")) {
+      response = "Uma dica de parceiro: Tente sempre separar o que é lucro do que é capital de giro. Use o app para marcar bem o que é 'Negócio' e o Edmilson e eu te ajudamos a ver o crescimento real no fim do mês.";
     } else if (lowerText.contains("edmilson") || lowerText.contains("falar")) {
-      response = "Com certeza! O Edmilson Muacigarro é o mentor por trás desta visão. Pode contactá-lo para consultoria avançada de gestão e fiscalidade.";
+      response = "Com certeza! O Edmilson Muacigarro é o mentor desta jornada. Ele adora ver o sucesso dos nossos parceiros. Vou preparar o link de contacto direto para você!";
+    } else if (lowerText.contains("analise") || lowerText.contains("contas")) {
+      response = "Com todo o gosto! Já vi as tuas transações recentes e estamos no bom caminho. Gostaria de ver o relatório de Fluxo de Caixa ou o DRE para termos uma visão estratégica?";
     }
 
     if (mounted) {
@@ -88,12 +90,12 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('FinTech Bot', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('Edmilson & IA (Parceiro)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             Row(
               children: [
                 Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)),
                 const SizedBox(width: 4),
-                const Text('Online • Especialista Fiscal', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                const Text('Online • Pronto para crescermos juntos', style: TextStyle(fontSize: 10, color: Colors.grey)),
               ],
             ),
           ],

@@ -186,4 +186,23 @@ class FixedExpensesNotifier extends StateNotifier<List<FixedExpense>> {
     state = state.where((e) => e.id != id).toList();
     await _repository.saveFixedExpenses(state);
   }
+}final userSettingsProvider = StateNotifierProvider<UserSettingsNotifier, UserSettings>((ref) {
+  final repository = ref.watch(transactionRepositoryProvider);
+  return UserSettingsNotifier(repository);
+});
+
+class UserSettingsNotifier extends StateNotifier<UserSettings> {
+  final TransactionRepository _repository;
+  UserSettingsNotifier(this._repository) : super(UserSettings()) {
+    loadSettings();
+  }
+
+  Future<void> loadSettings() async {
+    state = await _repository.getSettings();
+  }
+
+  Future<void> updateSettings(UserSettings settings) async {
+    state = settings;
+    await _repository.saveSettings(settings);
+  }
 }

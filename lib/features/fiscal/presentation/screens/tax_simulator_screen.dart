@@ -24,7 +24,7 @@ class _TaxSimulatorScreenState extends State<TaxSimulatorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Simulador ISPC')),
+      appBar: AppBar(title: const Text('Simulador de Crescimento')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -72,11 +72,11 @@ class _TaxSimulatorScreenState extends State<TaxSimulatorScreen> {
       ),
       child: const Row(
         children: [
-          Icon(Icons.info_outline, color: AppColors.primary),
+          Icon(Icons.auto_awesome_outlined, color: AppColors.primary),
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'O ISPC aplica-se a sujeitos com faturamento anual entre 100.000 MT e 2.500.000 MT.',
+              'O ISPC é o melhor amigo do pequeno negócio em Moçambique. Ele simplifica os seus impostos para podermos crescer juntos!',
               style: TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500),
             ),
           ),
@@ -143,12 +143,12 @@ class _TaxSimulatorScreenState extends State<TaxSimulatorScreen> {
       ),
       child: const Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
-          SizedBox(width: 8),
-          Expanded(
+          const Icon(Icons.rocket_launch_outlined, color: Colors.orange, size: 20),
+          const SizedBox(width: 8),
+          const Expanded(
             child: Text(
-              'Atenção: Este faturamento excede o limite anual de 2,5 milhões MT para o ISPC.',
-              style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+              'Uau! O seu faturamento já superou o limite do ISPC. 🚀 Isso é sinal de sucesso! Vamos conversar com o Edmilson sobre a transição?',
+              style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
         ],

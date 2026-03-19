@@ -76,9 +76,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           Expanded(
             child: transactionsAsync.when(
               data: (transactions) {
+                final reportStart = DateTime(_startDate.year, _startDate.month, _startDate.day);
+                final reportEnd = DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59);
+
                 final filtered = transactions.where((t) {
-                  final inRange = t.date.isAfter(_startDate.subtract(const Duration(seconds: 1))) && 
-                                 t.date.isBefore(_endDate.add(const Duration(days: 1)));
+                  final inRange = !t.date.isBefore(reportStart) && !t.date.isAfter(reportEnd);
                   final inContext = _isBusiness == null || t.isBusiness == _isBusiness;
                   return inRange && inContext;
                 }).toList();
@@ -94,7 +96,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                     const SizedBox(height: 24),
                     _buildMonthlyTrends(filtered, currencyFormat),
                     const SizedBox(height: 24),
-                    _buildFixedExpensesImpact(filtered, currencyFormat),
+                    _buildFixedExpensesImpact(filtered, currencyFormat, ref),
                   ],
                 );
               },
@@ -227,9 +229,12 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     );
   }
 
-  Widget _buildFixedExpensesImpact(List<Transaction> transactions, NumberFormat fmt) {
-    // Aqui usaríamos o minBalance que está nas configurações (mockado por enquanto)
-    const minBalance = 5000.0;
+  Widget _buildFixedExpensesImpact(List<Transaction> transactions, NumberFormat fmt, WidgetRef ref) {
+    final settings = ref.watch(userSettingsProvider);
+    final minBalance = settings.minMonthlyBalance;
+    
+    if (minBalance <= 0) return const SizedBox.shrink();
+
     final totalIncome = transactions.where((t) => t.type == TransactionType.income).fold(0.0, (sum, t) => sum + t.amount);
     final progress = (totalIncome / minBalance).clamp(0.0, 1.0);
 

@@ -24,7 +24,12 @@ class TransactionRepository {
 
   Future<void> saveTransaction(Transaction transaction) async {
     final transactions = await getTransactions();
-    transactions.add(transaction);
+    final index = transactions.indexWhere((t) => t.id == transaction.id);
+    if (index != -1) {
+      transactions[index] = transaction;
+    } else {
+      transactions.add(transaction);
+    }
     await _saveAll(transactions);
   }
 

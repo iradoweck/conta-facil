@@ -40,7 +40,7 @@ class _BudgetSimulatorScreenState extends State<BudgetSimulatorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gerador de Orçamentos'),
+        title: const Text('Projetar o Amanhã'),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_sweep_outlined),
@@ -57,7 +57,7 @@ class _BudgetSimulatorScreenState extends State<BudgetSimulatorScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Serviços & Itens', style: Theme.of(context).textTheme.titleLarge),
+                    Text('Serviços & Metas', style: Theme.of(context).textTheme.titleLarge),
                     TextButton.icon(
                       onPressed: _showAddDialog,
                       icon: const Icon(Icons.add, size: 18),
@@ -70,7 +70,13 @@ class _BudgetSimulatorScreenState extends State<BudgetSimulatorScreen> {
                 if (_items.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(40),
-                    child: Center(child: Text('Nenhum item adicionado.', style: TextStyle(color: Colors.grey))),
+                    child: Center(
+                      child: Text(
+                        'Ainda não desenhamos nada? O Edmilson e eu adoramos ver novas ideias no papel!', 
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -85,12 +91,12 @@ class _BudgetSimulatorScreenState extends State<BudgetSimulatorScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Adicionar Item'),
+        title: const Text('Adicionar Item ou Meta'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Descrição do Serviço')),
-            TextField(controller: _priceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Preço (MT)')),
+            TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Descrição')),
+            TextField(controller: _priceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Valor Estimado (MT)')),
           ],
         ),
         actions: [
@@ -134,7 +140,7 @@ class _BudgetSimulatorScreenState extends State<BudgetSimulatorScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Total Pro-forma', style: TextStyle(fontSize: 16)),
+                const Text('Total Pro-forma / Meta', style: TextStyle(fontSize: 16)),
                 Text(
                   fmt.format(_total),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
@@ -159,7 +165,7 @@ class _BudgetSimulatorScreenState extends State<BudgetSimulatorScreen> {
 
   void _generateQuote() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Orçamento gerado! Pronto para exportar (Simulado).')),
+      const SnackBar(content: Text('Orçamento gerado! Vamos fazer isto acontecer juntos? 🚀')),
     );
   }
 }

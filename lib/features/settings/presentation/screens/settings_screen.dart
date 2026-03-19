@@ -19,8 +19,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    // In a real app, this would be loaded from a settingsProvider
-    _minBalanceController.text = '5000.00'; 
+    // Valor inicial será populado pelo provider no build ou via listener
   }
 
   @override
@@ -40,11 +39,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: const Text('Valor que não deve faltar na conta.'),
               trailing: SizedBox(
                 width: 100,
-                child: TextField(
-                  controller: _minBalanceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(suffixText: 'MT'),
-                  textAlign: TextAlign.end,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final settings = ref.watch(userSettingsProvider);
+                    if (_minBalanceController.text.isEmpty && settings.minMonthlyBalance > 0) {
+                      _minBalanceController.text = settings.minMonthlyBalance.toStringAsFixed(2);
+                    }
+                    return TextField(
+                      controller: _minBalanceController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(suffixText: 'MT'),
+                      textAlign: TextAlign.end,
+                      onEditingComplete: () {
+                        final value = double.tryParse(_minBalanceController.text) ?? 0.0;
+                        ref.read(userSettingsProvider.notifier).updateSettings(
+                          UserSettings(minMonthlyBalance: value),
+                        );
+                        FocusScope.of(context).unfocus();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Meta de reserva atualizada!'), duration: Duration(seconds: 1)),
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ),
