@@ -9,8 +9,10 @@ import 'add_transaction_screen.dart';
 import 'package:conta_facil/features/fiscal/presentation/screens/tax_simulator_screen.dart';
 import 'package:conta_facil/features/chat/presentation/screens/chat_screen.dart';
 import 'package:conta_facil/features/profile/presentation/screens/professional_profile_screen.dart';
-import 'package:conta_facil/features/reports/presentation/screens/sales_report_screen.dart';
 import 'package:conta_facil/features/profile/presentation/screens/budget_simulator_screen.dart';
+import 'package:conta_facil/features/fiscal/presentation/screens/fiscal_guide_screen.dart';
+import 'package:conta_facil/features/reports/presentation/screens/sales_report_screen.dart';
+import 'package:conta_facil/features/education/presentation/screens/education_hub_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -55,6 +57,10 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               _buildSectionHeader(context, 'Transações Recentes'),
               _buildRecentTransactions(context, transactionsAsync, currencyFormat, ref),
+              const SizedBox(height: 24),
+              _buildSectionHeader(context, 'Dicas & Aprendizado'),
+              _buildEducationPreview(context),
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -186,7 +192,9 @@ class DashboardScreen extends ConsumerWidget {
               _buildActionButton(context, Icons.person_outline, 'Perfil', Colors.blueGrey, () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfessionalProfileScreen()));
               }),
-              const SizedBox(width: 80), // Placeholder to keep grid alignment
+              _buildActionButton(context, Icons.menu_book_outlined, 'Guia', Colors.orange, () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FiscalGuideScreen()));
+              }),
             ],
           ),
         ],
@@ -366,6 +374,70 @@ class DashboardScreen extends ConsumerWidget {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, s) => Center(child: Text('Erro ao carregar: $e')),
+    );
+  }
+
+  Widget _buildEducationPreview(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          _buildEducationItem(
+            context,
+            'Web Dev',
+            'Como criar sites em Moçambique',
+            Icons.web,
+            Colors.blue,
+          ),
+          const SizedBox(width: 12),
+          _buildEducationItem(
+            context,
+            'Finanças',
+            'Gestão para Pequenos Negócios',
+            Icons.account_balance,
+            Colors.orange,
+          ),
+          const SizedBox(width: 12),
+          _buildEducationItem(
+            context,
+            'Fiscalidade',
+            'Tudo sobre ISPC e IVA',
+            Icons.calculate,
+            Colors.green,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEducationItem(BuildContext context, String title, String subtitle, IconData icon, Color color) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EducationHubScreen())),
+      child: Container(
+        width: 180,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 12),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
