@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:conta_facil/features/settings/domain/models/settings_models.dart';
 import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
+import 'package:conta_facil/features/profile/presentation/screens/professional_profile_screen.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -48,6 +49,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSectionTitle('Dados do Utilizador'),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.person_outline, color: AppColors.primary),
+              title: const Text('Perfil Profissional'),
+              subtitle: const Text('Alterar nome, cargo e biografia.'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfessionalProfileScreen()),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
           _buildSectionTitle('Metas Financeiras'),
           _buildMetaCard(
             'Meta Negócio',
@@ -72,6 +86,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Gestão de Contas'),
+          _buildAccountList(ref.watch(accountsProvider)),
           const SizedBox(height: 24),
           _buildSectionTitle('Gestão de Categorias'),
           _buildCategoryList('Entradas', categories.where((CategoryItem c) => c.isIncome).toList(), true),
@@ -268,6 +285,119 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ref.read(fixedExpensesProvider.notifier).addExpense(newExpense);
                   } else {
                     ref.read(fixedExpensesProvider.notifier).updateExpense(newExpense);
+                  }
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  Widget _buildAccountList(List<FinanceAccount> accounts) {
+    return Column(
+      children: [
+        if (accounts.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text('Nenhuma conta cadastrada.', style: TextStyle(color: Colors.grey)),
+          ),
+        ...accounts.map((acc) => Card(
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: Icon(acc.icon, color: AppColors.primary, size: 20),
+            ),
+            title: Text(acc.name),
+            subtitle: Text(acc.isBusiness ? 'Negócio' : 'Pessoal'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  onPressed: () => _showAccountDialog(account: acc),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                  onPressed: () => ref.read(accountsProvider.notifier).deleteAccount(acc.id),
+                ),
+              ],
+            ),
+          ),
+        )),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () => _showAccountDialog(),
+          icon: const Icon(Icons.add),
+          label: const Text('Nova Conta / Carteira'),
+        ),
+      ],
+    );
+  }
+
+  void _showAccountDialog({FinanceAccount? account}) {
+    final nameController = TextEditingController(text: account?.name);
+    bool isBusiness = account?.isBusiness ?? true;
+    IconData selectedIcon = account?.icon ?? Icons.account_balance;
+
+    final List<IconData> availableIcons = [
+      Icons.account_balance,
+      Icons.money,
+      Icons.phone_android,
+      Icons.credit_card,
+      Icons.savings,
+      Icons.wallet,
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(account == null ? 'Nova Conta' : 'Editar Conta'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nome da Conta')),
+                const SizedBox(height: 16),
+                const Text('Escolha um Ícone', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  children: availableIcons.map((icon) => GestureDetector(
+                    onPressed: () => setDialogState(() => selectedIcon = icon),
+                    child: CircleAvatar(
+                      backgroundColor: selectedIcon == icon ? AppColors.primary : Colors.grey[200],
+                      child: Icon(icon, color: selectedIcon == icon ? Colors.white : Colors.grey[600], size: 20),
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  title: const Text('Negócio?'),
+                  subtitle: Text(isBusiness ? 'Conta da Empresa' : 'Conta Pessoal'),
+                  value: isBusiness,
+                  onChanged: (val) => setDialogState(() => isBusiness = val),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.isNotEmpty) {
+                  final newAccount = FinanceAccount(
+                    id: account?.id ?? const Uuid().v4(),
+                    name: nameController.text,
+                    icon: selectedIcon,
+                    isBusiness: isBusiness,
+                  );
+                  if (account == null) {
+                    ref.read(accountsProvider.notifier).addAccount(newAccount);
+                  } else {
+                    ref.read(accountsProvider.notifier).updateAccount(newAccount);
                   }
                   Navigator.pop(context);
                 }

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
-import 'package:conta_facil/features/financeiro/domain/models/account.dart';
 import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
 import 'package:conta_facil/features/settings/domain/models/settings_models.dart';
 
@@ -271,23 +270,37 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   }
 
   Widget _buildAccountPicker() {
-    final accountsAsync = ref.watch(accountsProvider);
-    return accountsAsync.when(
-      data: (accounts) {
-        final contextAccounts = accounts.where((a) => a.type == (_isBusiness ? AccountType.business : AccountType.personal)).toList();
-        return DropdownButtonFormField<String>(
-          value: _selectedAccountId,
-          decoration: const InputDecoration(
-            labelText: 'Conta / Origem',
-            prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-          ),
-          items: contextAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(),
-          onChanged: (val) => setState(() => _selectedAccountId = val),
-          hint: const Text('Selecione uma conta'),
-        );
-      },
-      loading: () => const LinearProgressIndicator(),
-      error: (_, __) => const Text('Erro ao carregar contas'),
+    final accounts = ref.watch(accountsProvider);
+    final contextAccounts = accounts.where((a) => a.isBusiness == _isBusiness).toList();
+    
+    // If current selected account is not in filtered list, reset it
+    if (_selectedAccountId != null && !contextAccounts.any((a) => a.id == _selectedAccountId)) {
+      _selectedAccountId = null;
+    }
+
+    // Default to first account if available
+    if (_selectedAccountId == null && contextAccounts.isNotEmpty) {
+      _selectedAccountId = contextAccounts.first.id;
+    }
+
+    return DropdownButtonFormField<String>(
+      value: _selectedAccountId,
+      decoration: const InputDecoration(
+        labelText: 'Conta / Origem',
+        prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+      ),
+      items: contextAccounts.map((a) => DropdownMenuItem(
+        value: a.id, 
+        child: Row(
+          children: [
+            Icon(a.icon, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Text(a.name),
+          ],
+        )
+      )).toList(),
+      onChanged: (val) => setState(() => _selectedAccountId = val),
+      hint: const Text('Selecione uma conta'),
     );
   }
 

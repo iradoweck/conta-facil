@@ -121,4 +121,21 @@ class TransactionRepository {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_fixedExpensesKey, json.encode(expenses.map((e) => e.toJson()).toList()));
   }
+
+  // --- Accounts ---
+
+  static const _accountsKey = 'finance_accounts';
+
+  Future<List<FinanceAccount>> getAccounts() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? encodedData = prefs.getString(_accountsKey);
+    if (encodedData == null) return [];
+    final List<dynamic> decodedData = json.decode(encodedData);
+    return decodedData.map((item) => FinanceAccount.fromJson(item)).toList();
+  }
+
+  Future<void> saveAccounts(List<FinanceAccount> accounts) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_accountsKey, json.encode(accounts.map((e) => e.toJson()).toList()));
+  }
 }

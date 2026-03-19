@@ -89,3 +89,32 @@ class UserSettings {
     );
   }
 }
+class FinanceAccount {
+  final String id;
+  final String name;
+  final IconData icon;
+  final bool isBusiness;
+
+  FinanceAccount({
+    required this.id,
+    required this.name,
+    required this.icon,
+    this.isBusiness = true,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'icon': icon.codePoint,
+    'isBusiness': isBusiness,
+  };
+
+  factory FinanceAccount.fromJson(Map<String, dynamic> json) {
+    return FinanceAccount(
+      id: json['id'],
+      name: json['name'],
+      icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+      isBusiness: json['isBusiness'] ?? true,
+    );
+  }
+}

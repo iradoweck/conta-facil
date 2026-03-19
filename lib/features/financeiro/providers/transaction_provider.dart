@@ -191,6 +191,50 @@ class FixedExpensesNotifier extends StateNotifier<List<FixedExpense>> {
   return UserSettingsNotifier(repository);
 });
 
+final accountsProvider = StateNotifierProvider<AccountsNotifier, List<FinanceAccount>>((ref) {
+  final repository = ref.watch(transactionRepositoryProvider);
+  return AccountsNotifier(repository);
+});
+
+class AccountsNotifier extends StateNotifier<List<FinanceAccount>> {
+  final TransactionRepository _repository;
+  AccountsNotifier(this._repository) : super([]) {
+    loadAccounts();
+  }
+
+  Future<void> loadAccounts() async {
+    final accounts = await _repository.getAccounts();
+    if (accounts.isEmpty) {
+      // Default accounts
+      final defaults = [
+        FinanceAccount(id: 'cash-b', name: 'Dinheiro (Negócio)', icon: Icons.money, isBusiness: true),
+        FinanceAccount(id: 'bank-b', name: 'Banco (Negócio)', icon: Icons.account_balance, isBusiness: true),
+        FinanceAccount(id: 'cash-p', name: 'Dinheiro (Pessoal)', icon: Icons.money, isBusiness: false),
+        FinanceAccount(id: 'mpesa-p', name: 'M-Pesa (Pessoal)', icon: Icons.phone_android, isBusiness: false),
+      ];
+      state = defaults;
+      await _repository.saveAccounts(defaults);
+    } else {
+      state = accounts;
+    }
+  }
+
+  Future<void> addAccount(FinanceAccount account) async {
+    state = [...state, account];
+    await _repository.saveAccounts(state);
+  }
+
+  Future<void> updateAccount(FinanceAccount account) async {
+    state = [for (final a in state) if (a.id == account.id) account else a];
+    await _repository.saveAccounts(state);
+  }
+
+  Future<void> deleteAccount(String id) async {
+    state = state.where((a) => a.id != id).toList();
+    await _repository.saveAccounts(state);
+  }
+}
+
 class UserSettingsNotifier extends StateNotifier<UserSettings> {
   final TransactionRepository _repository;
   UserSettingsNotifier(this._repository) : super(UserSettings()) {
