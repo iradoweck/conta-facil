@@ -25,17 +25,17 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.account_balance_wallet,
-              size: 100,
-              color: Colors.white,
+            Image.asset(
+              'assets/images/app_icon.png',
+              height: 120,
             ),
             const SizedBox(height: 24),
-            Text(
+            const Text(
               'Conta Fácil',
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 40,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),

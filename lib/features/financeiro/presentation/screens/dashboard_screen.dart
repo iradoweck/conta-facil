@@ -32,7 +32,7 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Conta Fácil'),
+        title: Image.asset('assets/images/logo.png', height: 32),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_pin_outlined),

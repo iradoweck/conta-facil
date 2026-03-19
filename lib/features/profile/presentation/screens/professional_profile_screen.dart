@@ -58,6 +58,14 @@ class ProfessionalProfileScreen extends StatelessWidget {
           children: [
             Container(color: AppColors.primary),
             Positioned(
+              top: 40,
+              right: 20,
+              child: Opacity(
+                opacity: 0.2,
+                child: Image.asset('assets/images/app_icon.png', height: 100),
+              ),
+            ),
+            Positioned(
               bottom: 60,
               left: 0,
               right: 0,

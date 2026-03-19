@@ -57,7 +57,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 40),
-            const Icon(Icons.account_balance_wallet, size: 64, color: AppColors.primary),
+            Image.asset('assets/images/logo.png', height: 80),
             const SizedBox(height: 24),
             Text(
               'Bem-vindo de volta',

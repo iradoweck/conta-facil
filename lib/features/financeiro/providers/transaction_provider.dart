@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/features/financeiro/data/repositories/transaction_repository.dart';
 import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
-import 'package:conta_facil/features/financeiro/domain/models/account.dart';
 import 'package:conta_facil/features/settings/domain/models/settings_models.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
@@ -14,10 +13,6 @@ final dashFilterProvider = StateProvider<bool?>((ref) => true); // true: Negóci
 
 final transactionsProvider = StateNotifierProvider<TransactionNotifier, AsyncValue<List<Transaction>>>((ref) {
   return TransactionNotifier(ref.watch(transactionRepositoryProvider));
-});
-
-final accountsProvider = StateNotifierProvider<AccountNotifier, AsyncValue<List<Account>>>((ref) {
-  return AccountNotifier(ref.watch(transactionRepositoryProvider));
 });
 
 class TransactionNotifier extends StateNotifier<AsyncValue<List<Transaction>>> {
@@ -48,7 +43,7 @@ class TransactionNotifier extends StateNotifier<AsyncValue<List<Transaction>>> {
 
   Future<void> updateTransaction(Transaction transaction) async {
     try {
-      await _repository.saveTransaction(transaction); // saveTransaction handles both exists/new in my repo logic
+      await _repository.saveTransaction(transaction);
       await loadTransactions();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -65,54 +60,48 @@ class TransactionNotifier extends StateNotifier<AsyncValue<List<Transaction>>> {
   }
 }
 
-class AccountNotifier extends StateNotifier<AsyncValue<List<Account>>> {
-  final TransactionRepository _repository;
+final accountsProvider = StateNotifierProvider<AccountsNotifier, List<FinanceAccount>>((ref) {
+  final repository = ref.watch(transactionRepositoryProvider);
+  return AccountsNotifier(repository);
+});
 
-  AccountNotifier(this._repository) : super(const AsyncValue.loading()) {
+class AccountsNotifier extends StateNotifier<List<FinanceAccount>> {
+  final TransactionRepository _repository;
+  AccountsNotifier(this._repository) : super([]) {
     loadAccounts();
   }
 
   Future<void> loadAccounts() async {
-    try {
-      final accounts = await _repository.getAccounts();
-      state = AsyncValue.data(accounts);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+    final accounts = await _repository.getAccounts();
+    if (accounts.isEmpty) {
+      final defaults = [
+        FinanceAccount(id: 'cash-b', name: 'Dinheiro (Negócio)', icon: Icons.money, isBusiness: true),
+        FinanceAccount(id: 'bank-b', name: 'Banco (Negócio)', icon: Icons.account_balance, isBusiness: true),
+        FinanceAccount(id: 'cash-p', name: 'Dinheiro (Pessoal)', icon: Icons.money, isBusiness: false),
+        FinanceAccount(id: 'mpesa-p', name: 'M-Pesa (Pessoal)', icon: Icons.phone_android, isBusiness: false),
+      ];
+      state = defaults;
+      await _repository.saveAccounts(defaults);
+    } else {
+      state = accounts;
     }
   }
 
-  Future<void> addAccount(Account account) async {
-    final current = state.value ?? [];
-    final updated = [...current, account];
-    await _repository.saveAccounts(updated);
-    state = AsyncValue.data(updated);
+  Future<void> addAccount(FinanceAccount account) async {
+    state = [...state, account];
+    await _repository.saveAccounts(state);
+  }
+
+  Future<void> updateAccount(FinanceAccount account) async {
+    state = [for (final a in state) if (a.id == account.id) account else a];
+    await _repository.saveAccounts(state);
+  }
+
+  Future<void> deleteAccount(String id) async {
+    state = state.where((a) => a.id != id).toList();
+    await _repository.saveAccounts(state);
   }
 }
-
-// Provedores computados respeitando o filtro da Dashboard
-final totalIncomeProvider = Provider<double>((ref) {
-  final transactions = ref.watch(transactionsProvider).valueOrNull ?? [];
-  final filter = ref.watch(dashFilterProvider);
-  
-  return transactions
-      .where((t) => (filter == null || t.isBusiness == filter))
-      .where((t) => t.type == TransactionType.income)
-      .fold(0, (sum, t) => sum + t.amount);
-});
-
-final totalExpenseProvider = Provider<double>((ref) {
-  final transactions = ref.watch(transactionsProvider).valueOrNull ?? [];
-  final filter = ref.watch(dashFilterProvider);
-  
-  return transactions
-      .where((t) => (filter == null || t.isBusiness == filter))
-      .where((t) => t.type == TransactionType.expense)
-      .fold(0, (sum, t) => sum + t.amount);
-});
-
-final balanceProvider = Provider<double>((ref) {
-  return ref.watch(totalIncomeProvider) - ref.watch(totalExpenseProvider);
-});
 
 final categoriesProvider = StateNotifierProvider<CategoriesNotifier, List<CategoryItem>>((ref) {
   final repository = ref.watch(transactionRepositoryProvider);
@@ -186,54 +175,12 @@ class FixedExpensesNotifier extends StateNotifier<List<FixedExpense>> {
     state = state.where((e) => e.id != id).toList();
     await _repository.saveFixedExpenses(state);
   }
-}final userSettingsProvider = StateNotifierProvider<UserSettingsNotifier, UserSettings>((ref) {
+}
+
+final userSettingsProvider = StateNotifierProvider<UserSettingsNotifier, UserSettings>((ref) {
   final repository = ref.watch(transactionRepositoryProvider);
   return UserSettingsNotifier(repository);
 });
-
-final accountsProvider = StateNotifierProvider<AccountsNotifier, List<FinanceAccount>>((ref) {
-  final repository = ref.watch(transactionRepositoryProvider);
-  return AccountsNotifier(repository);
-});
-
-class AccountsNotifier extends StateNotifier<List<FinanceAccount>> {
-  final TransactionRepository _repository;
-  AccountsNotifier(this._repository) : super([]) {
-    loadAccounts();
-  }
-
-  Future<void> loadAccounts() async {
-    final accounts = await _repository.getAccounts();
-    if (accounts.isEmpty) {
-      // Default accounts
-      final defaults = [
-        FinanceAccount(id: 'cash-b', name: 'Dinheiro (Negócio)', icon: Icons.money, isBusiness: true),
-        FinanceAccount(id: 'bank-b', name: 'Banco (Negócio)', icon: Icons.account_balance, isBusiness: true),
-        FinanceAccount(id: 'cash-p', name: 'Dinheiro (Pessoal)', icon: Icons.money, isBusiness: false),
-        FinanceAccount(id: 'mpesa-p', name: 'M-Pesa (Pessoal)', icon: Icons.phone_android, isBusiness: false),
-      ];
-      state = defaults;
-      await _repository.saveAccounts(defaults);
-    } else {
-      state = accounts;
-    }
-  }
-
-  Future<void> addAccount(FinanceAccount account) async {
-    state = [...state, account];
-    await _repository.saveAccounts(state);
-  }
-
-  Future<void> updateAccount(FinanceAccount account) async {
-    state = [for (final a in state) if (a.id == account.id) account else a];
-    await _repository.saveAccounts(state);
-  }
-
-  Future<void> deleteAccount(String id) async {
-    state = state.where((a) => a.id != id).toList();
-    await _repository.saveAccounts(state);
-  }
-}
 
 class UserSettingsNotifier extends StateNotifier<UserSettings> {
   final TransactionRepository _repository;
@@ -250,3 +197,26 @@ class UserSettingsNotifier extends StateNotifier<UserSettings> {
     await _repository.saveSettings(settings);
   }
 }
+
+// Computed providers
+final totalIncomeProvider = Provider<double>((ref) {
+  final transactions = ref.watch(transactionsProvider).valueOrNull ?? [];
+  final filter = ref.watch(dashFilterProvider);
+  return transactions
+      .where((t) => (filter == null || t.isBusiness == filter))
+      .where((t) => t.type == TransactionType.income)
+      .fold(0, (sum, t) => sum + t.amount);
+});
+
+final totalExpenseProvider = Provider<double>((ref) {
+  final transactions = ref.watch(transactionsProvider).valueOrNull ?? [];
+  final filter = ref.watch(dashFilterProvider);
+  return transactions
+      .where((t) => (filter == null || t.isBusiness == filter))
+      .where((t) => t.type == TransactionType.expense)
+      .fold(0, (sum, t) => sum + t.amount);
+});
+
+final balanceProvider = Provider<double>((ref) {
+  return ref.watch(totalIncomeProvider) - ref.watch(totalExpenseProvider);
+});

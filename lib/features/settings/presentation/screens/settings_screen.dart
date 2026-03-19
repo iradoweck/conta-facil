@@ -295,6 +295,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
   Widget _buildAccountList(List<FinanceAccount> accounts) {
     return Column(
       children: [
@@ -366,7 +368,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Wrap(
                   spacing: 12,
                   children: availableIcons.map((icon) => GestureDetector(
-                    onPressed: () => setDialogState(() => selectedIcon = icon),
+                    onTap: () => setDialogState(() => selectedIcon = icon),
                     child: CircleAvatar(
                       backgroundColor: selectedIcon == icon ? AppColors.primary : Colors.grey[200],
                       child: Icon(icon, color: selectedIcon == icon ? Colors.white : Colors.grey[600], size: 20),

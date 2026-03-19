@@ -61,6 +61,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Image.asset('assets/images/logo.png', height: 60),
+            const SizedBox(height: 24),
             Text(
               'Junte-se ao Conta Fácil',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28),
