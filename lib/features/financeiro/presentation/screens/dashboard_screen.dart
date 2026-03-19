@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
 import '../../../auth/providers/auth_provider.dart';
-import '../../../../providers/transaction_provider.dart';
-import '../../../../models/transaction_model.dart';
+import '../providers/transaction_provider.dart';
+import '../domain/models/transaction.dart';
 import 'add_transaction_screen.dart';
 import '../../../fiscal/presentation/screens/tax_simulator_screen.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
@@ -15,9 +15,12 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactions = ref.watch(transactionsProvider);
-    final notifier = ref.read(transactionsProvider.notifier);
-    final currencyFormat = NumberFormat.currency(locale: 'pt_MZ', symbol: 'MZN');
+    final transactionsAsync = ref.watch(transactionsProvider);
+    final totalIncome = ref.watch(totalIncomeProvider);
+    final totalExpense = ref.watch(totalExpenseProvider);
+    final balance = ref.watch(balanceProvider);
+    
+    final currencyFormat = NumberFormat.currency(locale: 'pt_MZ', symbol: 'MT');
 
     return Scaffold(
       appBar: AppBar(
@@ -36,20 +39,20 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => {},
+        onRefresh: () async => ref.read(transactionsProvider.notifier).loadTransactions(),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              _buildBalanceCard(context, notifier, currencyFormat),
+              _buildBalanceCard(context, balance, totalIncome, totalExpense, currencyFormat),
               const SizedBox(height: 16),
               _buildActionGrid(context),
               const SizedBox(height: 24),
               _buildSectionHeader(context, 'Resumo do Mês'),
-              _buildSummaryChart(context),
+              _buildSummaryChart(context, totalIncome, totalExpense),
               const SizedBox(height: 24),
               _buildSectionHeader(context, 'Transações Recentes'),
-              _buildRecentTransactions(context, transactions, currencyFormat),
+              _buildRecentTransactions(context, transactionsAsync, currencyFormat, ref),
             ],
           ),
         ),
@@ -64,7 +67,20 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBalanceCard(BuildContext context, TransactionNotifier notifier, NumberFormat fmt) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          TextButton(onPressed: () {}, child: const Text('Ver tudo')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceCard(BuildContext context, double balance, double income, double expense, NumberFormat fmt) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -89,7 +105,7 @@ class DashboardScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            fmt.format(notifier.balance),
+            fmt.format(balance),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 32,
@@ -100,8 +116,8 @@ class DashboardScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildMiniBalance('Entradas', fmt.format(notifier.totalIncome), AppColors.success),
-              _buildMiniBalance('Saídas', fmt.format(notifier.totalExpense), AppColors.alert),
+              _buildMiniBalance('Entradas', fmt.format(income), AppColors.success),
+              _buildMiniBalance('Saídas', fmt.format(expense), AppColors.alert),
             ],
           ),
         ],
@@ -176,72 +192,158 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          TextButton(onPressed: () {}, child: const Text('Ver tudo')),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryChart(BuildContext context) {
+  Widget _buildSummaryChart(BuildContext context, double income, double expense) {
+    final total = income + expense;
+    final incomeWidth = total > 0 ? (income / total) : 0.5;
+    
     return Card(
-      child: Container(
-        height: 100,
-        padding: const EdgeInsets.all(16),
-        child: const Center(child: Text('Gráfico de Fluxo de Caixa (Placeholder)')),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Distribuição Real', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  income >= expense ? 'Lucrativo' : 'Atenção',
+                  style: TextStyle(
+                    color: income >= expense ? AppColors.success : AppColors.alert,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              height: 12,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: (incomeWidth * 100).toInt(),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        borderRadius: BorderRadius.horizontal(left: Radius.circular(6)),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: ((1 - incomeWidth) * 100).toInt(),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.alert,
+                        borderRadius: BorderRadius.horizontal(right: Radius.circular(6)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildLegendItem('Vendas', AppColors.success),
+                _buildLegendItem('Custos', AppColors.alert),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildRecentTransactions(BuildContext context, List<TransactionModel> transactions, NumberFormat fmt) {
-    if (transactions.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey),
-              SizedBox(height: 16),
-              Text('Nenhuma transação ainda.', style: TextStyle(color: Colors.grey)),
-            ],
-          ),
-        ),
-      );
-    }
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    );
+  }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: transactions.length > 5 ? 5 : transactions.length,
-      itemBuilder: (context, index) {
-        final t = transactions[index];
-        final isIncome = t.type == TransactionType.income;
-        
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: (isIncome ? AppColors.success : AppColors.alert).withOpacity(0.1),
-            child: Icon(
-              isIncome ? Icons.payments_outlined : Icons.shopping_bag_outlined,
-              color: isIncome ? AppColors.success : AppColors.alert,
+  Widget _buildRecentTransactions(BuildContext context, AsyncValue<List<Transaction>> transactionsAsync, NumberFormat fmt, WidgetRef ref) {
+    return transactionsAsync.when(
+      data: (transactions) {
+        if (transactions.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text('Nenhuma transação ainda.', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
             ),
-          ),
-          title: Text(t.description),
-          subtitle: Text(t.category),
-          trailing: Text(
-            '${isIncome ? '+' : '-'} ${fmt.format(t.amount)}',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isIncome ? AppColors.success : AppColors.alert,
-            ),
-          ),
+          );
+        }
+
+        final sorted = List<Transaction>.from(transactions)..sort((a, b) => b.date.compareTo(a.date));
+        final recent = sorted.take(5).toList();
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: recent.length,
+          itemBuilder: (context, index) {
+            final t = recent[index];
+            final isIncome = t.type == TransactionType.income;
+            
+            return ListTile(
+              onLongPress: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Eliminar Transação?'),
+                    content: const Text('Esta ação não pode ser desfeita.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                      TextButton(
+                        onPressed: () {
+                          ref.read(transactionsProvider.notifier).deleteTransaction(t.id);
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              leading: CircleAvatar(
+                backgroundColor: (isIncome ? AppColors.success : AppColors.alert).withOpacity(0.1),
+                child: Icon(
+                  isIncome ? Icons.payments_outlined : Icons.shopping_bag_outlined,
+                  color: isIncome ? AppColors.success : AppColors.alert,
+                ),
+              ),
+              title: Text(t.title),
+              subtitle: Text('${t.category} • ${DateFormat('dd/MM').format(t.date)}'),
+              trailing: Text(
+                '${isIncome ? '+' : '-'} ${fmt.format(t.amount)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isIncome ? AppColors.success : AppColors.alert,
+                ),
+              ),
+            );
+          },
         );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, s) => Center(child: Text('Erro ao carregar: $e')),
     );
   }
 }

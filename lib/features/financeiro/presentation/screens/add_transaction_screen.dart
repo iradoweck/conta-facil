@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
-import '../../../../models/transaction_model.dart';
-import '../../../../providers/transaction_provider.dart';
-import '../../../auth/providers/auth_provider.dart';
+import '../domain/models/transaction.dart';
+import '../providers/transaction_provider.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   final TransactionType initialType;
@@ -17,7 +16,7 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
 class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   late TransactionType _type;
   final _amountController = TextEditingController();
-  final _descController = TextEditingController();
+  final _titleController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'Geral';
 
@@ -33,7 +32,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   @override
   void dispose() {
     _amountController.dispose();
-    _descController.dispose();
+    _titleController.dispose();
     super.dispose();
   }
 
@@ -47,12 +46,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       );
       return;
     }
-
-    final user = ref.read(authStateProvider).value;
     
-    final transaction = TransactionModel(
-      userId: user?.uid ?? 'anonymous',
-      description: _descController.text.isEmpty ? 'Sem descrição' : _descController.text,
+    final transaction = Transaction(
+      title: _titleController.text.isEmpty ? 'Sem título' : _titleController.text,
       amount: amount,
       date: _selectedDate,
       category: _selectedCategory,
@@ -80,18 +76,24 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             const SizedBox(height: 24),
             Text('Detalhes', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
-            _buildDescriptionInput(),
+            _buildTitleInput(),
             const SizedBox(height: 16),
             _buildCategoryPicker(),
             const SizedBox(height: 16),
             _buildDatePicker(),
             const SizedBox(height: 48),
-            ElevatedButton(
-              onPressed: _saveTransaction,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _type == TransactionType.income ? AppColors.success : AppColors.alert,
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _saveTransaction,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _type == TransactionType.income ? AppColors.success : AppColors.alert,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Salvar Transação', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
-              child: const Text('Salvar Transação'),
             ),
           ],
         ),
@@ -145,7 +147,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Valor (MZN)', style: TextStyle(fontSize: 16, color: Colors.black54)),
+        const Text('Valor (MT)', style: TextStyle(fontSize: 16, color: Colors.black54)),
         TextField(
           controller: _amountController,
           style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
@@ -161,11 +163,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
-  Widget _buildDescriptionInput() {
+  Widget _buildTitleInput() {
     return TextField(
-      controller: _descController,
+      controller: _titleController,
       decoration: const InputDecoration(
-        labelText: 'Descrição',
+        labelText: 'Título / Descrição',
         prefixIcon: Icon(Icons.description_outlined),
       ),
     );
