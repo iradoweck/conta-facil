@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/repositories/transaction_repository.dart';
-import '../domain/models/transaction.dart';
+import 'package:conta_facil/features/financeiro/data/repositories/transaction_repository.dart';
+import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   return TransactionRepository();

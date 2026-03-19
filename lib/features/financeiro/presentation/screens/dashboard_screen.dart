@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
-import '../../../auth/providers/auth_provider.dart';
-import '../providers/transaction_provider.dart';
-import '../domain/models/transaction.dart';
+import 'package:conta_facil/features/auth/providers/auth_provider.dart';
+import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
+import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
 import 'add_transaction_screen.dart';
-import '../../../fiscal/presentation/screens/tax_simulator_screen.dart';
-import '../../../chat/presentation/screens/chat_screen.dart';
-import '../../../profile/presentation/screens/professional_profile_screen.dart';
+import 'package:conta_facil/features/fiscal/presentation/screens/tax_simulator_screen.dart';
+import 'package:conta_facil/features/chat/presentation/screens/chat_screen.dart';
+import 'package:conta_facil/features/profile/presentation/screens/professional_profile_screen.dart';
+import 'package:conta_facil/features/reports/presentation/screens/sales_report_screen.dart';
+import 'package:conta_facil/features/profile/presentation/screens/budget_simulator_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -152,21 +154,41 @@ class DashboardScreen extends ConsumerWidget {
   Widget _buildActionGrid(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
-          _buildActionButton(context, Icons.add_circle_outline, 'Entrada', AppColors.success, () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.income)));
-          }),
-          _buildActionButton(context, Icons.remove_circle_outline, 'Saída', AppColors.alert, () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.expense)));
-          }),
-          _buildActionButton(context, Icons.calculate_outlined, 'Fiscal', AppColors.warning, () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaxSimulatorScreen()));
-          }),
-          _buildActionButton(context, Icons.chat_bubble_outline, 'Chat', AppColors.primary, () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatScreen()));
-          }),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildActionButton(context, Icons.add_circle_outline, 'Entrada', AppColors.success, () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.income)));
+              }),
+              _buildActionButton(context, Icons.remove_circle_outline, 'Saída', AppColors.alert, () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.expense)));
+              }),
+              _buildActionButton(context, Icons.calculate_outlined, 'Fiscal', AppColors.warning, () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaxSimulatorScreen()));
+              }),
+              _buildActionButton(context, Icons.chat_bubble_outline, 'Chat', AppColors.primary, () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatScreen()));
+              }),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildActionButton(context, Icons.assessment_outlined, 'Relatório', Colors.blue, () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SalesReportScreen()));
+              }),
+              _buildActionButton(context, Icons.description_outlined, 'Orçamento', Colors.deepPurple, () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BudgetSimulatorScreen()));
+              }),
+              _buildActionButton(context, Icons.person_outline, 'Perfil', Colors.blueGrey, () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfessionalProfileScreen()));
+              }),
+              const SizedBox(width: 80), // Placeholder to keep grid alignment
+            ],
+          ),
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
+import 'package:intl/intl.dart';
 
 class ChatMessage {
   final String text;

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../domain/models/transaction.dart';
+import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
 
 class TransactionRepository {
   static const String _storageKey = 'transactions_list';

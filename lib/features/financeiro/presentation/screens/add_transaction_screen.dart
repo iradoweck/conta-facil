@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
-import '../domain/models/transaction.dart';
-import '../providers/transaction_provider.dart';
+import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
+import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   final TransactionType initialType;
