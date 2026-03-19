@@ -32,7 +32,10 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset('assets/images/logo.png', height: 32),
+        title: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 140),
+          child: Image.asset('assets/images/logo.png', height: 32),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_pin_outlined),
@@ -100,7 +103,13 @@ class DashboardScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(
+              title, 
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           if (onVerTudo != null)
             TextButton(
               onPressed: onVerTudo,
@@ -175,13 +184,18 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildMiniBalance('Entradas', fmt.format(income), AppColors.success),
-              _buildMiniBalance('Saídas', fmt.format(expense), AppColors.alert),
-            ],
-          ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildMiniBalance('Entradas', fmt.format(income), AppColors.success),
+                  const SizedBox(width: 24),
+                  _buildMiniBalance('Saídas', fmt.format(expense), AppColors.alert),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -201,9 +215,12 @@ class DashboardScreen extends ConsumerWidget {
               color: color,
             ),
             const SizedBox(width: 4),
-            Text(
-              value,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            Flexible(
+              child: Text(
+                value,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -216,8 +233,10 @@ class DashboardScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.spaceBetween,
             children: [
               _buildActionButton(context, Icons.add_circle_outline, 'Entrada', AppColors.success, () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.income)));
@@ -234,8 +253,10 @@ class DashboardScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.spaceBetween,
             children: [
               _buildActionButton(context, Icons.assessment_outlined, 'Relatório', Colors.blue, () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FinancialReportsScreen()));
@@ -270,7 +291,13 @@ class DashboardScreen extends ConsumerWidget {
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          Text(
+            label, 
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -404,30 +431,36 @@ class DashboardScreen extends ConsumerWidget {
               ),
               title: Text(t.title),
               subtitle: Text('${t.category} • ${DateFormat('dd/MM').format(t.date)}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${isIncome ? '+' : '-'} ${fmt.format(t.amount)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isIncome ? AppColors.success : AppColors.alert,
+              trailing: SizedBox(
+                width: 120,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${isIncome ? '+' : '-'} ${fmt.format(t.amount)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isIncome ? AppColors.success : AppColors.alert,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  PopupMenuButton(
-                    onSelected: (val) {
-                      if (val == 'edit') {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddTransactionScreen(transactionToEdit: t)));
-                      } else if (val == 'delete') {
-                        _showDeleteConfirm(context, ref, t.id);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                      const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
-                    ],
-                  ),
-                ],
+                    PopupMenuButton(
+                      onSelected: (val) {
+                        if (val == 'edit') {
+                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddTransactionScreen(transactionToEdit: t)));
+                        } else if (val == 'delete') {
+                          _showDeleteConfirm(context, ref, t.id);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                        const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -538,9 +571,12 @@ class DashboardScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Meta $contextLabel: ${fmt.format(target)}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              Expanded(
+                child: Text(
+                  'Meta $contextLabel: ${fmt.format(target)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               Text(
                 '$percentage%',
