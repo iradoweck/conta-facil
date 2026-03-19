@@ -9,6 +9,8 @@ class Transaction {
   final DateTime date;
   final TransactionType type;
   final String category;
+  final String? accountId;
+  final bool isBusiness;
 
   Transaction({
     String? id,
@@ -17,6 +19,8 @@ class Transaction {
     required this.date,
     required this.type,
     required this.category,
+    this.accountId,
+    this.isBusiness = true,
   }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toJson() {
@@ -27,6 +31,8 @@ class Transaction {
       'date': date.toIso8601String(),
       'type': type.name,
       'category': category,
+      'accountId': accountId,
+      'isBusiness': isBusiness,
     };
   }
 
@@ -38,6 +44,8 @@ class Transaction {
       date: DateTime.parse(json['date']),
       type: TransactionType.values.byName(json['type']),
       category: json['category'],
+      accountId: json['accountId'],
+      isBusiness: json['isBusiness'] ?? true,
     );
   }
 
@@ -47,6 +55,8 @@ class Transaction {
     DateTime? date,
     TransactionType? type,
     String? category,
+    String? accountId,
+    bool? isBusiness,
   }) {
     return Transaction(
       id: id,
@@ -55,6 +65,8 @@ class Transaction {
       date: date ?? this.date,
       type: type ?? this.type,
       category: category ?? this.category,
+      accountId: accountId ?? this.accountId,
+      isBusiness: isBusiness ?? this.isBusiness,
     );
   }
 }

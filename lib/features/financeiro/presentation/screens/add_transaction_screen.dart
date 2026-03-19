@@ -3,11 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
+import 'package:conta_facil/features/financeiro/domain/models/account.dart';
 import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
+import 'package:conta_facil/features/settings/domain/models/settings_models.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
   final TransactionType initialType;
-  const AddTransactionScreen({super.key, this.initialType = TransactionType.expense});
+  final Transaction? transactionToEdit;
+
+  const AddTransactionScreen({
+    super.key, 
+    this.initialType = TransactionType.expense,
+    this.transactionToEdit,
+  });
 
   @override
   ConsumerState<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -15,24 +23,40 @@ class AddTransactionScreen extends ConsumerStatefulWidget {
 
 class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   late TransactionType _type;
+  late bool _isBusiness;
+  String? _selectedAccountId;
+  
   final _amountController = TextEditingController();
   final _titleController = TextEditingController();
+  final _customCategoryController = TextEditingController();
+  
   DateTime _selectedDate = DateTime.now();
-  String _selectedCategory = 'Geral';
-
-  final List<String> _incomeCategories = ['Venda', 'Serviço', 'Investimento', 'Outros'];
-  final List<String> _expenseCategories = ['Aluguel', 'Salário', 'Mercado', 'Transporte', 'Saúde', 'Outros'];
+  String? _selectedCategory;
+  bool _showCustomCategory = false;
 
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType;
+    final t = widget.transactionToEdit;
+    if (t != null) {
+      _type = t.type;
+      _isBusiness = t.isBusiness;
+      _amountController.text = t.amount.toString();
+      _titleController.text = t.title;
+      _selectedDate = t.date;
+      _selectedCategory = t.category;
+      _selectedAccountId = t.accountId;
+    } else {
+      _type = widget.initialType;
+      _isBusiness = true;
+    }
   }
 
   @override
   void dispose() {
     _amountController.dispose();
     _titleController.dispose();
+    _customCategoryController.dispose();
     super.dispose();
   }
 
@@ -46,16 +70,34 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       );
       return;
     }
+
+    final category = _showCustomCategory 
+        ? _customCategoryController.text 
+        : (_selectedCategory ?? 'Geral');
     
-    final transaction = Transaction(
+    final transaction = widget.transactionToEdit?.copyWith(
       title: _titleController.text.isEmpty ? 'Sem título' : _titleController.text,
       amount: amount,
       date: _selectedDate,
-      category: _selectedCategory,
+      category: category,
       type: _type,
+      isBusiness: _isBusiness,
+      accountId: _selectedAccountId,
+    ) ?? Transaction(
+      title: _titleController.text.isEmpty ? 'Sem título' : _titleController.text,
+      amount: amount,
+      date: _selectedDate,
+      category: category,
+      type: _type,
+      isBusiness: _isBusiness,
+      accountId: _selectedAccountId,
     );
 
-    ref.read(transactionsProvider.notifier).addTransaction(transaction);
+    if (widget.transactionToEdit != null) {
+      ref.read(transactionsProvider.notifier).updateTransaction(transaction);
+    } else {
+      ref.read(transactionsProvider.notifier).addTransaction(transaction);
+    }
     Navigator.of(context).pop();
   }
 
@@ -63,7 +105,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_type == TransactionType.income ? 'Nova Entrada' : 'Nova Saída'),
+        title: Text(widget.transactionToEdit != null 
+            ? 'Editar Transação' 
+            : (_type == TransactionType.income ? 'Nova Entrada' : 'Nova Saída')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -71,6 +115,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildTypeToggle(),
+            const SizedBox(height: 24),
+            _buildContextToggle(),
             const SizedBox(height: 32),
             _buildAmountInput(),
             const SizedBox(height: 24),
@@ -78,7 +124,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             const SizedBox(height: 16),
             _buildTitleInput(),
             const SizedBox(height: 16),
+            _buildAccountPicker(),
+            const SizedBox(height: 16),
             _buildCategoryPicker(),
+            if (_showCustomCategory) ...[
+              const SizedBox(height: 16),
+              _buildCustomCategoryInput(),
+            ],
             const SizedBox(height: 16),
             _buildDatePicker(),
             const SizedBox(height: 48),
@@ -92,7 +144,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Salvar Transação', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(
+                  widget.transactionToEdit != null ? 'Atualizar Transação' : 'Salvar Transação', 
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+                ),
               ),
             ),
           ],
@@ -123,7 +178,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Widget _buildToggleItem(TransactionType type, String label, Color color) {
     bool isSelected = _type == type;
     return GestureDetector(
-      onTap: () => setState(() => _type = type),
+      onTap: () => setState(() {
+        _type = type;
+        _selectedCategory = null; // Reset category when type changes
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -140,6 +198,45 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildContextToggle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Finalidade', style: TextStyle(fontSize: 14, color: Colors.black54)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: ChoiceChip(
+                label: const Center(child: Text('Negócio')),
+                selected: _isBusiness,
+                onSelected: (val) => setState(() {
+                  _isBusiness = true;
+                  _selectedAccountId = null;
+                }),
+                selectedColor: AppColors.primary.withOpacity(0.2),
+                labelStyle: TextStyle(color: _isBusiness ? AppColors.primary : Colors.black54),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ChoiceChip(
+                label: const Center(child: Text('Pessoal')),
+                selected: !_isBusiness,
+                onSelected: (val) => setState(() {
+                  _isBusiness = false;
+                  _selectedAccountId = null;
+                }),
+                selectedColor: Colors.blue.withOpacity(0.2),
+                labelStyle: TextStyle(color: !_isBusiness ? Colors.blue : Colors.black54),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -173,16 +270,62 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     );
   }
 
+  Widget _buildAccountPicker() {
+    final accountsAsync = ref.watch(accountsProvider);
+    return accountsAsync.when(
+      data: (accounts) {
+        final contextAccounts = accounts.where((a) => a.type == (_isBusiness ? AccountType.business : AccountType.personal)).toList();
+        return DropdownButtonFormField<String>(
+          value: _selectedAccountId,
+          decoration: const InputDecoration(
+            labelText: 'Conta / Origem',
+            prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+          ),
+          items: contextAccounts.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))).toList(),
+          onChanged: (val) => setState(() => _selectedAccountId = val),
+          hint: const Text('Selecione uma conta'),
+        );
+      },
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => const Text('Erro ao carregar contas'),
+    );
+  }
+
   Widget _buildCategoryPicker() {
-    final categories = _type == TransactionType.income ? _incomeCategories : _expenseCategories;
+    final allCategories = ref.watch(categoriesProvider);
+    final filteredCategories = allCategories.where((CategoryItem c) => c.isIncome == (_type == TransactionType.income)).toList();
+    
+    final categoryNames = filteredCategories.map((c) => c.name).toList();
+    categoryNames.add('Outra...');
+
+    if (_selectedCategory != null && !categoryNames.contains(_selectedCategory)) {
+       // If currently selected category is not in the list (maybe deleted?), fallback
+       _selectedCategory = categoryNames.first;
+    }
+
     return DropdownButtonFormField<String>(
-      value: categories.contains(_selectedCategory) ? _selectedCategory : categories.first,
+      value: _selectedCategory,
       decoration: const InputDecoration(
         labelText: 'Categoria',
         prefixIcon: Icon(Icons.category_outlined),
       ),
-      items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-      onChanged: (val) => setState(() => _selectedCategory = val!),
+      items: categoryNames.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+      onChanged: (val) => setState(() {
+        _selectedCategory = val!;
+        _showCustomCategory = val == 'Outra...';
+      }),
+      hint: const Text('Selecione uma categoria'),
+    );
+  }
+
+  Widget _buildCustomCategoryInput() {
+    return TextField(
+      controller: _customCategoryController,
+      decoration: const InputDecoration(
+        labelText: 'Nome da Categoria',
+        hintText: 'Ex: Marketing, Consultoria, etc.',
+        prefixIcon: Icon(Icons.edit_note),
+      ),
     );
   }
 

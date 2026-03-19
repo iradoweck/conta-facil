@@ -1,0 +1,222 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:conta_facil/core/constants/app_colors.dart';
+import 'package:conta_facil/features/settings/domain/models/settings_models.dart';
+import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
+
+import 'package:uuid/uuid.dart';
+
+class SettingsScreen extends ConsumerStatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  final _minBalanceController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // In a real app, this would be loaded from a settingsProvider
+    _minBalanceController.text = '5000.00'; 
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<CategoryItem> categories = ref.watch(categoriesProvider);
+    final List<FixedExpense> fixedExpenses = ref.watch(fixedExpensesProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Configurações')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildSectionTitle('Metas Financeiras'),
+          Card(
+            child: ListTile(
+              title: const Text('Saldo Mínimo Mensal (Reserva)'),
+              subtitle: const Text('Valor que não deve faltar na conta.'),
+              trailing: SizedBox(
+                width: 100,
+                child: TextField(
+                  controller: _minBalanceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(suffixText: 'MT'),
+                  textAlign: TextAlign.end,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Gestão de Categorias'),
+          _buildCategoryList('Entradas', categories.where((CategoryItem c) => c.isIncome).toList(), true),
+          _buildCategoryList('Saídas', categories.where((CategoryItem c) => !c.isIncome).toList(), false),
+          const SizedBox(height: 24),
+          _buildSectionTitle('Despesas Fixas'),
+          _buildFixedExpensesList(fixedExpenses),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary)),
+    );
+  }
+
+  Widget _buildCategoryList(String title, List<CategoryItem> items, bool isIncome) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(title, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
+        ),
+        ...items.map((item) => ListTile(
+          leading: Icon(item.icon, color: AppColors.primary),
+          title: Text(item.name),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                onPressed: () => _showCategoryDialog(item: item, isIncome: isIncome),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                onPressed: () => ref.read(categoriesProvider.notifier).deleteCategory(item.id),
+              ),
+            ],
+          ),
+        )),
+        TextButton.icon(
+          onPressed: () => _showCategoryDialog(isIncome: isIncome),
+          icon: const Icon(Icons.add),
+          label: Text('Adicionar Categoria de $title'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFixedExpensesList(List<FixedExpense> expenses) {
+    return Column(
+      children: [
+        if (expenses.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text('Nenhuma despesa fixa cadastrada.', style: TextStyle(color: Colors.grey)),
+          ),
+        ...expenses.map((e) => Card(
+          child: ListTile(
+            title: Text(e.title),
+            subtitle: Text('Vence dia ${e.dueDay.toString().padLeft(2, '0')} • ${e.amount} MT'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  onPressed: () => _showFixedExpenseDialog(expense: e),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                  onPressed: () => ref.read(fixedExpensesProvider.notifier).deleteExpense(e.id),
+                ),
+              ],
+            ),
+          ),
+        )),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () => _showFixedExpenseDialog(),
+          icon: const Icon(Icons.add),
+          label: const Text('Nova Despesa Fixa'),
+        ),
+      ],
+    );
+  }
+
+  void _showCategoryDialog({CategoryItem? item, required bool isIncome}) {
+    final nameController = TextEditingController(text: item?.name);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(item == null ? 'Nova Categoria' : 'Editar Categoria'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Nome da Categoria'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isNotEmpty) {
+                final newItem = CategoryItem(
+                  id: item?.id ?? const Uuid().v4(),
+                  name: nameController.text,
+                  isIncome: isIncome,
+                  icon: item?.icon ?? (isIncome ? Icons.add_circle_outline : Icons.remove_circle_outline),
+                );
+                if (item == null) {
+                  ref.read(categoriesProvider.notifier).addCategory(newItem);
+                } else {
+                  ref.read(categoriesProvider.notifier).updateCategory(newItem);
+                }
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFixedExpenseDialog({FixedExpense? expense}) {
+    final titleController = TextEditingController(text: expense?.title);
+    final amountController = TextEditingController(text: expense?.amount.toString());
+    final dayController = TextEditingController(text: expense?.dueDay.toString());
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(expense == null ? 'Nova Despesa Fixa' : 'Editar Despesa Fixa'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título')),
+            TextField(controller: amountController, decoration: const InputDecoration(labelText: 'Valor'), keyboardType: TextInputType.number),
+            TextField(controller: dayController, decoration: const InputDecoration(labelText: 'Dia de Vencimento'), keyboardType: TextInputType.number),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              if (titleController.text.isNotEmpty) {
+                final newExpense = FixedExpense(
+                  id: expense?.id ?? const Uuid().v4(),
+                  title: titleController.text,
+                  amount: double.tryParse(amountController.text) ?? 0,
+                  dueDay: int.tryParse(dayController.text) ?? 1,
+                );
+                if (expense == null) {
+                  ref.read(fixedExpensesProvider.notifier).addExpense(newExpense);
+                } else {
+                  ref.read(fixedExpensesProvider.notifier).updateExpense(newExpense);
+                }
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+  }
+}

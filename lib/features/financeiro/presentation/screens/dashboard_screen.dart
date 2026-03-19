@@ -11,8 +11,12 @@ import 'package:conta_facil/features/chat/presentation/screens/chat_screen.dart'
 import 'package:conta_facil/features/profile/presentation/screens/professional_profile_screen.dart';
 import 'package:conta_facil/features/profile/presentation/screens/budget_simulator_screen.dart';
 import 'package:conta_facil/features/fiscal/presentation/screens/fiscal_guide_screen.dart';
-import 'package:conta_facil/features/reports/presentation/screens/sales_report_screen.dart';
+import 'package:conta_facil/features/reports/presentation/screens/financial_reports_screen.dart';
+import 'package:conta_facil/features/reports/presentation/screens/analytics_screen.dart';
+import 'package:conta_facil/features/financeiro/presentation/screens/all_transactions_screen.dart';
+import 'package:conta_facil/features/settings/presentation/screens/settings_screen.dart';
 import 'package:conta_facil/features/education/presentation/screens/education_hub_screen.dart';
+import 'package:conta_facil/features/education/domain/models/education_item.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -37,6 +41,12 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
           ),
@@ -48,14 +58,21 @@ class DashboardScreen extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
+              const SizedBox(height: 16),
+              _buildContextSwitcher(context, ref),
+              const SizedBox(height: 16),
               _buildBalanceCard(context, balance, totalIncome, totalExpense, currencyFormat),
               const SizedBox(height: 16),
               _buildActionGrid(context),
               const SizedBox(height: 24),
-              _buildSectionHeader(context, 'Resumo do Mês'),
+              _buildSectionHeader(context, 'Resumo do Mês', onVerTudo: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AnalyticsScreen()));
+              }),
               _buildSummaryChart(context, totalIncome, totalExpense),
               const SizedBox(height: 24),
-              _buildSectionHeader(context, 'Transações Recentes'),
+              _buildSectionHeader(context, 'Transações Recentes', onVerTudo: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AllTransactionsScreen()));
+              }),
               _buildRecentTransactions(context, transactionsAsync, currencyFormat, ref),
               const SizedBox(height: 24),
               _buildSectionHeader(context, 'Dicas & Aprendizado'),
@@ -75,15 +92,43 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
+  Widget _buildSectionHeader(BuildContext context, String title, {VoidCallback? onVerTudo}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          TextButton(onPressed: () {}, child: const Text('Ver tudo')),
+          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          if (onVerTudo != null)
+            TextButton(
+              onPressed: onVerTudo,
+              child: const Text('Ver Tudo'),
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContextSwitcher(BuildContext context, WidgetRef ref) {
+    final filter = ref.watch(dashFilterProvider);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SegmentedButton<bool?>(
+        segments: const [
+          ButtonSegment(value: true, label: Text('Negócio'), icon: Icon(Icons.business_center)),
+          ButtonSegment(value: false, label: Text('Pessoal'), icon: Icon(Icons.person)),
+          ButtonSegment(value: null, label: Text('Ambos'), icon: Icon(Icons.all_inclusive)),
+        ],
+        selected: {filter},
+        onSelectionChanged: (newSelection) {
+          ref.read(dashFilterProvider.notifier).state = newSelection.first;
+        },
+        style: SegmentedButton.styleFrom(
+          backgroundColor: Colors.white,
+          selectedBackgroundColor: AppColors.primary.withOpacity(0.1),
+          selectedForegroundColor: AppColors.primary,
+          side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+        ),
       ),
     );
   }
@@ -92,7 +137,7 @@ class DashboardScreen extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.primary,
         borderRadius: BorderRadius.circular(24),
@@ -184,7 +229,7 @@ class DashboardScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildActionButton(context, Icons.assessment_outlined, 'Relatório', Colors.blue, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SalesReportScreen()));
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FinancialReportsScreen()));
               }),
               _buildActionButton(context, Icons.description_outlined, 'Orçamento', Colors.deepPurple, () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BudgetSimulatorScreen()));
@@ -249,42 +294,43 @@ class DashboardScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Container(
-              height: 12,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
               child: Row(
                 children: [
                   Expanded(
                     flex: (incomeWidth * 100).toInt(),
                     child: Container(
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
-                        borderRadius: BorderRadius.horizontal(left: Radius.circular(6)),
+                      height: 24,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                        ),
                       ),
+                      child: const Center(child: Icon(Icons.trending_up, color: Colors.white, size: 14)),
                     ),
                   ),
                   Expanded(
                     flex: ((1 - incomeWidth) * 100).toInt(),
                     child: Container(
-                      decoration: const BoxDecoration(
-                        color: AppColors.alert,
-                        borderRadius: BorderRadius.horizontal(right: Radius.circular(6)),
+                      height: 24,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.alert, AppColors.alert.withOpacity(0.8)],
+                        ),
                       ),
+                      child: const Center(child: Icon(Icons.trending_down, color: Colors.white, size: 14)),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildLegendItem('Vendas', AppColors.success),
-                _buildLegendItem('Custos', AppColors.alert),
+                _buildLegendItem('Entradas', AppColors.success),
+                _buildLegendItem('Saídas', AppColors.alert),
               ],
             ),
           ],
@@ -304,9 +350,12 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildRecentTransactions(BuildContext context, AsyncValue<List<Transaction>> transactionsAsync, NumberFormat fmt, WidgetRef ref) {
+    final filter = ref.watch(dashFilterProvider);
     return transactionsAsync.when(
       data: (transactions) {
-        if (transactions.isEmpty) {
+        final filtered = transactions.where((t) => (filter == null || t.isBusiness == filter)).toList();
+        
+        if (filtered.isEmpty) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 40),
             child: Center(
@@ -314,14 +363,14 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey),
                   SizedBox(height: 16),
-                  Text('Nenhuma transação ainda.', style: TextStyle(color: Colors.grey)),
+                  Text('Nenhuma transação encontrada.', style: TextStyle(color: Colors.grey)),
                 ],
               ),
             ),
           );
         }
 
-        final sorted = List<Transaction>.from(transactions)..sort((a, b) => b.date.compareTo(a.date));
+        final sorted = List<Transaction>.from(filtered)..sort((a, b) => b.date.compareTo(a.date));
         final recent = sorted.take(5).toList();
 
         return ListView.builder(
@@ -333,25 +382,6 @@ class DashboardScreen extends ConsumerWidget {
             final isIncome = t.type == TransactionType.income;
             
             return ListTile(
-              onLongPress: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Eliminar Transação?'),
-                    content: const Text('Esta ação não pode ser desfeita.'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-                      TextButton(
-                        onPressed: () {
-                          ref.read(transactionsProvider.notifier).deleteTransaction(t.id);
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-                      ),
-                    ],
-                  ),
-                );
-              },
               leading: CircleAvatar(
                 backgroundColor: (isIncome ? AppColors.success : AppColors.alert).withOpacity(0.1),
                 child: Icon(
@@ -361,12 +391,30 @@ class DashboardScreen extends ConsumerWidget {
               ),
               title: Text(t.title),
               subtitle: Text('${t.category} • ${DateFormat('dd/MM').format(t.date)}'),
-              trailing: Text(
-                '${isIncome ? '+' : '-'} ${fmt.format(t.amount)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isIncome ? AppColors.success : AppColors.alert,
-                ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${isIncome ? '+' : '-'} ${fmt.format(t.amount)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isIncome ? AppColors.success : AppColors.alert,
+                    ),
+                  ),
+                  PopupMenuButton(
+                    onSelected: (val) {
+                      if (val == 'edit') {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddTransactionScreen(transactionToEdit: t)));
+                      } else if (val == 'delete') {
+                        _showDeleteConfirm(context, ref, t.id);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                      const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                    ],
+                  ),
+                ],
               ),
             );
           },
@@ -382,61 +430,60 @@ class DashboardScreen extends ConsumerWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
-        children: [
-          _buildEducationItem(
-            context,
-            'Web Dev',
-            'Como criar sites em Moçambique',
-            Icons.web,
-            Colors.blue,
-          ),
-          const SizedBox(width: 12),
-          _buildEducationItem(
-            context,
-            'Finanças',
-            'Gestão para Pequenos Negócios',
-            Icons.account_balance,
-            Colors.orange,
-          ),
-          const SizedBox(width: 12),
-          _buildEducationItem(
-            context,
-            'Fiscalidade',
-            'Tudo sobre ISPC e IVA',
-            Icons.calculate,
-            Colors.green,
-          ),
-        ],
+        children: mockEducationData.map((item) => Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: _buildEducationItem(context, item),
+        )).toList(),
       ),
     );
   }
 
-  Widget _buildEducationItem(BuildContext context, String title, String subtitle, IconData icon, Color color) {
+  Widget _buildEducationItem(BuildContext context, EducationItem item) {
     return GestureDetector(
       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EducationHubScreen())),
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
+          color: item.color.withOpacity(0.05),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.1)),
+          border: Border.all(color: item.color.withOpacity(0.1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 24),
+            Icon(item.icon, color: item.color, size: 24),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 4),
             Text(
-              subtitle,
+              item.description,
               style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(BuildContext context, WidgetRef ref, String id) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar Transação?'),
+        content: const Text('Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () {
+              ref.read(transactionsProvider.notifier).deleteTransaction(id);
+              Navigator.pop(context);
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

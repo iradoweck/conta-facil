@@ -42,3 +42,9 @@ O **Conta Fácil** é uma plataforma distribuída (Mobile-first) para gestão fi
 - **Backend / API**: Laravel (ou Firebase Functions)
 - **Base de Dados**: Firestore / PostgreSQL (com AES-256)
 - **Auth**: Firebase Auth (MFA obrigatório para Admin/Pro)
+
+## 7. Painel de Administração (CMS)
+- **Gestão de Conteúdo**: Edmilson (Admin) publica novos guias e dicas via painel web ou console.
+- **Base de Conhecimento**: O conteúdo de Desenvolvimento Web, Negócios e Fiscal é servido dinamicamente via Firestore.
+- **Segregação de Dados**: O Admin **não** tem acesso aos dados financeiros privados dos utilizadores (Entradas/Saídas), garantindo privacidade total.
+- **Suporte**: Sistema de tickets e chat escalado para interações diretas.
