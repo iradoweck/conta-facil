@@ -14,18 +14,34 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  final _minBalanceController = TextEditingController();
+  final _minBalanceBusinessController = TextEditingController();
+  final _minBalancePersonalController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Valor inicial será populado pelo provider no build ou via listener
+  }
+
+  @override
+  void dispose() {
+    _minBalanceBusinessController.dispose();
+    _minBalancePersonalController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final List<CategoryItem> categories = ref.watch(categoriesProvider);
     final List<FixedExpense> fixedExpenses = ref.watch(fixedExpensesProvider);
+    final settings = ref.watch(userSettingsProvider);
+
+    // Populate controllers if empty
+    if (_minBalanceBusinessController.text.isEmpty && settings.minMonthlyBalanceBusiness > 0) {
+      _minBalanceBusinessController.text = settings.minMonthlyBalanceBusiness.toStringAsFixed(2);
+    }
+    if (_minBalancePersonalController.text.isEmpty && settings.minMonthlyBalancePersonal > 0) {
+      _minBalancePersonalController.text = settings.minMonthlyBalancePersonal.toStringAsFixed(2);
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Configurações')),
@@ -33,36 +49,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _buildSectionTitle('Metas Financeiras'),
-          Card(
-            child: ListTile(
-              title: const Text('Saldo Mínimo Mensal (Reserva)'),
-              subtitle: const Text('Valor que não deve faltar na conta.'),
-              trailing: SizedBox(
-                width: 100,
-                child: Consumer(
-                  builder: (context, ref, child) {
-                    final settings = ref.watch(userSettingsProvider);
-                    if (_minBalanceController.text.isEmpty && settings.minMonthlyBalance > 0) {
-                      _minBalanceController.text = settings.minMonthlyBalance.toStringAsFixed(2);
-                    }
-                    return TextField(
-                      controller: _minBalanceController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(suffixText: 'MT'),
-                      textAlign: TextAlign.end,
-                      onEditingComplete: () {
-                        final value = double.tryParse(_minBalanceController.text) ?? 0.0;
-                        ref.read(userSettingsProvider.notifier).updateSettings(
-                          UserSettings(minMonthlyBalance: value),
-                        );
-                        FocusScope.of(context).unfocus();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Meta de reserva atualizada!'), duration: Duration(seconds: 1)),
-                        );
-                      },
-                    );
-                  },
-                ),
+          _buildMetaCard(
+            'Meta Negócio',
+            'Reserva estratégica para a empresa.',
+            _minBalanceBusinessController,
+            (val) => ref.read(userSettingsProvider.notifier).updateSettings(
+              UserSettings(
+                minMonthlyBalanceBusiness: val,
+                minMonthlyBalancePersonal: settings.minMonthlyBalancePersonal,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildMetaCard(
+            'Meta Pessoal',
+            'Reserva para despesas pessoais.',
+            _minBalancePersonalController,
+            (val) => ref.read(userSettingsProvider.notifier).updateSettings(
+              UserSettings(
+                minMonthlyBalanceBusiness: settings.minMonthlyBalanceBusiness,
+                minMonthlyBalancePersonal: val,
               ),
             ),
           ),
@@ -74,6 +80,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildSectionTitle('Despesas Fixas'),
           _buildFixedExpensesList(fixedExpenses),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMetaCard(String title, String subtitle, TextEditingController controller, Function(double) onSave) {
+    return Card(
+      child: ListTile(
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: SizedBox(
+          width: 100,
+          child: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(suffixText: 'MT'),
+            textAlign: TextAlign.end,
+            onEditingComplete: () {
+              final value = double.tryParse(controller.text) ?? 0.0;
+              onSave(value);
+              FocusScope.of(context).unfocus();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Meta atualizada!'), duration: Duration(seconds: 1)),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -130,7 +162,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ...expenses.map((e) => Card(
           child: ListTile(
             title: Text(e.title),
-            subtitle: Text('Vence dia ${e.dueDay.toString().padLeft(2, '0')} • ${e.amount} MT'),
+            subtitle: Text('${e.isBusiness ? 'Negócio' : 'Pessoal'} • Vence dia ${e.dueDay.toString().padLeft(2, '0')} • ${e.amount} MT'),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -198,41 +230,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final titleController = TextEditingController(text: expense?.title);
     final amountController = TextEditingController(text: expense?.amount.toString());
     final dayController = TextEditingController(text: expense?.dueDay.toString());
+    bool isBusiness = expense?.isBusiness ?? true;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(expense == null ? 'Nova Despesa Fixa' : 'Editar Despesa Fixa'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título')),
-            TextField(controller: amountController, decoration: const InputDecoration(labelText: 'Valor'), keyboardType: TextInputType.number),
-            TextField(controller: dayController, decoration: const InputDecoration(labelText: 'Dia de Vencimento'), keyboardType: TextInputType.number),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(expense == null ? 'Nova Despesa Fixa' : 'Editar Despesa Fixa'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título')),
+              TextField(controller: amountController, decoration: const InputDecoration(labelText: 'Valor'), keyboardType: TextInputType.number),
+              TextField(controller: dayController, decoration: const InputDecoration(labelText: 'Dia de Vencimento'), keyboardType: TextInputType.number),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Negócio?'),
+                subtitle: Text(isBusiness ? 'Despesa da Empresa' : 'Despesa Pessoal'),
+                value: isBusiness,
+                onChanged: (val) => setDialogState(() => isBusiness = val),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () {
+                if (titleController.text.isNotEmpty) {
+                  final newExpense = FixedExpense(
+                    id: expense?.id ?? const Uuid().v4(),
+                    title: titleController.text,
+                    amount: double.tryParse(amountController.text) ?? 0,
+                    dueDay: int.tryParse(dayController.text) ?? 1,
+                    isBusiness: isBusiness,
+                  );
+                  if (expense == null) {
+                    ref.read(fixedExpensesProvider.notifier).addExpense(newExpense);
+                  } else {
+                    ref.read(fixedExpensesProvider.notifier).updateExpense(newExpense);
+                  }
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Guardar'),
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () {
-              if (titleController.text.isNotEmpty) {
-                final newExpense = FixedExpense(
-                  id: expense?.id ?? const Uuid().v4(),
-                  title: titleController.text,
-                  amount: double.tryParse(amountController.text) ?? 0,
-                  dueDay: int.tryParse(dayController.text) ?? 1,
-                );
-                if (expense == null) {
-                  ref.read(fixedExpensesProvider.notifier).addExpense(newExpense);
-                } else {
-                  ref.read(fixedExpensesProvider.notifier).updateExpense(newExpense);
-                }
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
       ),
     );
   }

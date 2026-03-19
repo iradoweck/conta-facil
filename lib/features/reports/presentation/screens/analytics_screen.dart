@@ -229,13 +229,26 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     );
   }
 
-  Widget _buildFixedExpensesImpact(List<Transaction> transactions, NumberFormat fmt, WidgetRef ref) {
+  Widget _buildFixedExpensesImpact(List<Transaction> filteredTransactions, NumberFormat fmt, WidgetRef ref) {
     final settings = ref.watch(userSettingsProvider);
-    final minBalance = settings.minMonthlyBalance;
+    
+    double minBalance = 0;
+    String contextLabel = "";
+
+    if (_isBusiness == true) {
+      minBalance = settings.minMonthlyBalanceBusiness;
+      contextLabel = "Negócio";
+    } else if (_isBusiness == false) {
+      minBalance = settings.minMonthlyBalancePersonal;
+      contextLabel = "Pessoal";
+    } else {
+      minBalance = settings.minMonthlyBalanceBusiness + settings.minMonthlyBalancePersonal;
+      contextLabel = "Total";
+    }
     
     if (minBalance <= 0) return const SizedBox.shrink();
 
-    final totalIncome = transactions.where((t) => t.type == TransactionType.income).fold(0.0, (sum, t) => sum + t.amount);
+    final totalIncome = filteredTransactions.where((t) => t.type == TransactionType.income).fold(0.0, (sum, t) => sum + t.amount);
     final progress = (totalIncome / minBalance).clamp(0.0, 1.0);
 
     return Card(
@@ -246,16 +259,16 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
          child: Column(
            crossAxisAlignment: CrossAxisAlignment.start,
            children: [
-             const Text('Progresso vs Meta de Reserva', style: TextStyle(color: Colors.white70, fontSize: 13)),
+             Text('Progresso vs Meta de Reserva ($contextLabel)', style: const TextStyle(color: Colors.white70, fontSize: 13)),
              const SizedBox(height: 8),
              Text(fmt.format(minBalance), style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
              const SizedBox(height: 16),
              LinearProgressIndicator(value: progress, backgroundColor: Colors.white24, color: Colors.white),
-             const SizedBox(height: 8),
+             const SizedBox(height: 16),
              Text(
                progress >= 1.0 
-                  ? 'Parabéns! Atingiu a reserva mínima com as entradas do período.'
-                  : 'Faltam ${fmt.format(minBalance - totalIncome)} para atingir o saldo mínimo seguro.', 
+                  ? 'Parabéns! Atingiu a reserva mínima $contextLabel com as entradas do período.'
+                  : 'Faltam ${fmt.format(minBalance - totalIncome)} para atingir o saldo mínimo seguro em $contextLabel.', 
                style: const TextStyle(color: Colors.white70, fontSize: 11)
              ),
            ],

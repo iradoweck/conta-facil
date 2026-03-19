@@ -476,7 +476,21 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildGoalProgressCard(BuildContext context, WidgetRef ref, double income, NumberFormat fmt) {
     final settings = ref.watch(userSettingsProvider);
-    final target = settings.minMonthlyBalance;
+    final filter = ref.watch(dashFilterProvider);
+    
+    double target = 0;
+    String contextLabel = "";
+
+    if (filter == true) {
+      target = settings.minMonthlyBalanceBusiness;
+      contextLabel = "Negócio";
+    } else if (filter == false) {
+      target = settings.minMonthlyBalancePersonal;
+      contextLabel = "Pessoal";
+    } else {
+      target = settings.minMonthlyBalanceBusiness + settings.minMonthlyBalancePersonal;
+      contextLabel = "Total";
+    }
     
     if (target <= 0) return const SizedBox.shrink();
 
@@ -487,16 +501,16 @@ class DashboardScreen extends ConsumerWidget {
     Color progressColor = Colors.grey;
 
     if (progress >= 1.0) {
-      message = "Meta Batida! 🏆 Orgulho!";
+      message = "Meta $contextLabel Batida! 🏆 Orgulho!";
       progressColor = AppColors.success;
     } else if (progress >= 0.7) {
-      message = "Quase lá! Falta pouco! 🚀";
+      message = "Quase lá! Falta pouco para a meta $contextLabel! 🚀";
       progressColor = Colors.orange;
     } else if (progress >= 0.3) {
-      message = "Bom ritmo! Força parceiro!";
+      message = "Bom ritmo no $contextLabel! Força parceiro!";
       progressColor = AppColors.primary;
     } else if (progress > 0) {
-      message = "Primeiros passos rumo à meta!";
+      message = "Primeiros passos rumo à meta $contextLabel!";
       progressColor = Colors.blue;
     }
 
@@ -518,7 +532,7 @@ class DashboardScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Meta Mensal: ${fmt.format(target)}',
+                'Meta $contextLabel: ${fmt.format(target)}',
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               Text(

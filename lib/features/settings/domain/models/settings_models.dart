@@ -35,12 +35,14 @@ class FixedExpense {
   final String title;
   final double amount;
   final int dueDay;
+  final bool isBusiness;
 
   FixedExpense({
     required this.id,
     required this.title,
     required this.amount,
     required this.dueDay,
+    this.isBusiness = true,
   });
 
   Map<String, dynamic> toJson() => {
@@ -48,6 +50,7 @@ class FixedExpense {
     'title': title,
     'amount': amount,
     'dueDay': dueDay,
+    'isBusiness': isBusiness,
   };
 
   factory FixedExpense.fromJson(Map<String, dynamic> json) {
@@ -56,27 +59,32 @@ class FixedExpense {
       title: json['title'],
       amount: (json['amount'] as num).toDouble(),
       dueDay: json['dueDay'],
+      isBusiness: json['isBusiness'] ?? true,
     );
   }
 }
 
 class UserSettings {
-  final double minMonthlyBalance;
+  final double minMonthlyBalanceBusiness;
+  final double minMonthlyBalancePersonal;
   final bool defaultIsBusiness;
 
   UserSettings({
-    this.minMonthlyBalance = 0.0,
+    this.minMonthlyBalanceBusiness = 0.0,
+    this.minMonthlyBalancePersonal = 0.0,
     this.defaultIsBusiness = true,
   });
 
   Map<String, dynamic> toJson() => {
-    'minMonthlyBalance': minMonthlyBalance,
+    'minMonthlyBalanceBusiness': minMonthlyBalanceBusiness,
+    'minMonthlyBalancePersonal': minMonthlyBalancePersonal,
     'defaultIsBusiness': defaultIsBusiness,
   };
 
   factory UserSettings.fromJson(Map<String, dynamic> json) {
     return UserSettings(
-      minMonthlyBalance: (json['minMonthlyBalance'] as num).toDouble(),
+      minMonthlyBalanceBusiness: (json['minMonthlyBalanceBusiness'] ?? json['minMonthlyBalance'] ?? 0.0) as double,
+      minMonthlyBalancePersonal: (json['minMonthlyBalancePersonal'] ?? 0.0) as double,
       defaultIsBusiness: json['defaultIsBusiness'] ?? true,
     );
   }
