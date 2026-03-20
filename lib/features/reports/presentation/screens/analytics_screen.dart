@@ -4,6 +4,7 @@ import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
 import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:conta_facil/core/utils/responsive_helper.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
@@ -89,14 +90,29 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
                   return const Center(child: Text('Nenhuma transação no período.'));
                 }
 
+                final isLargeScreen = ResponsiveHelper.isTablet(context) || ResponsiveHelper.isLandscape(context);
+                
                 return ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    _buildCategoryDistribution(filtered, currencyFormat),
-                    const SizedBox(height: 24),
-                    _buildMonthlyTrends(filtered, currencyFormat),
-                    const SizedBox(height: 24),
-                    _buildFixedExpensesImpact(filtered, currencyFormat, ref),
+                    if (isLargeScreen) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _buildCategoryDistribution(filtered, currencyFormat)),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildMonthlyTrends(filtered, currencyFormat)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _buildFixedExpensesImpact(filtered, currencyFormat, ref),
+                    ] else ...[
+                      _buildCategoryDistribution(filtered, currencyFormat),
+                      const SizedBox(height: 24),
+                      _buildMonthlyTrends(filtered, currencyFormat),
+                      const SizedBox(height: 24),
+                      _buildFixedExpensesImpact(filtered, currencyFormat, ref),
+                    ],
                   ],
                 );
               },
@@ -118,8 +134,9 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           Row(
             children: [
               Expanded(
-                flex: 2,
+                flex: 1,
                 child: DropdownButtonFormField<String>(
+                  isExpanded: true,
                   value: _rangePreset,
                   decoration: const InputDecoration(labelText: 'Período', border: OutlineInputBorder()),
                   items: ['7 Dias', 'Este Mês', '3 Meses', '1 Ano', '3 Anos', 'Personalizado']
@@ -131,6 +148,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               Expanded(
                 flex: 1,
                 child: DropdownButtonFormField<bool?>(
+                  isExpanded: true,
                   value: _isBusiness,
                   decoration: const InputDecoration(labelText: 'Contexto', border: OutlineInputBorder()),
                   items: const [

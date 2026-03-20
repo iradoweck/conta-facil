@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
+import 'package:conta_facil/core/utils/responsive_helper.dart';
 import 'package:conta_facil/features/auth/providers/auth_provider.dart';
 import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
 import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
@@ -32,10 +33,7 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 140),
-          child: Image.asset('assets/images/logo.png', height: 32),
-        ),
+        title: Image.asset('assets/images/logo.png', height: 32),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_pin_outlined),
@@ -64,16 +62,36 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _buildContextSwitcher(context, ref),
               const SizedBox(height: 16),
-              _buildBalanceCard(context, balance, totalIncome, totalExpense, currencyFormat),
+              
+              // Adaptive Section: Balance & Summary Chart
+              if (ResponsiveHelper.isTablet(context) || ResponsiveHelper.isLandscape(context))
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildBalanceCard(context, balance, totalIncome, totalExpense, currencyFormat),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildSummaryChart(context, totalIncome, totalExpense),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                _buildBalanceCard(context, balance, totalIncome, totalExpense, currencyFormat),
+                const SizedBox(height: 16),
+                _buildSummaryChart(context, totalIncome, totalExpense),
+              ],
+              
               const SizedBox(height: 16),
               _buildGoalProgressCard(context, ref, totalIncome, currencyFormat),
               const SizedBox(height: 16),
+              _buildSectionHeader(context, 'Ações Rápidas'),
+              const SizedBox(height: 8),
               _buildActionGrid(context),
-              const SizedBox(height: 24),
-              _buildSectionHeader(context, 'Resumo do Mês', onVerTudo: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AnalyticsScreen()));
-              }),
-              _buildSummaryChart(context, totalIncome, totalExpense),
               const SizedBox(height: 24),
               _buildSectionHeader(context, 'Transações Recentes', onVerTudo: () {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AllTransactionsScreen()));
@@ -124,11 +142,9 @@ class DashboardScreen extends ConsumerWidget {
     final filter = ref.watch(dashFilterProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SizedBox(
-        width: double.infinity,
+      child: Center(
         child: FittedBox(
           fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
           child: SegmentedButton<bool?>(
             segments: const [
               ButtonSegment(value: true, label: Text('Negócio'), icon: Icon(Icons.business_center)),
@@ -175,27 +191,25 @@ class DashboardScreen extends ConsumerWidget {
             style: TextStyle(color: Colors.white70, fontSize: 16),
           ),
           const SizedBox(height: 8),
-          Text(
-            fmt.format(balance),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              fmt.format(balance),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 24),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildMiniBalance('Entradas', fmt.format(income), AppColors.success),
-                  const SizedBox(width: 24),
-                  _buildMiniBalance('Saídas', fmt.format(expense), AppColors.alert),
-                ],
-              ),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildMiniBalance('Entradas', fmt.format(income), AppColors.success),
+              _buildMiniBalance('Saídas', fmt.format(expense), AppColors.alert),
+            ],
+          ),
         ],
       ),
     );
@@ -215,12 +229,9 @@ class DashboardScreen extends ConsumerWidget {
               color: color,
             ),
             const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                value,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
-              ),
+            Text(
+              value,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -229,49 +240,47 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildActionGrid(BuildContext context) {
+    final crossAxisCount = ResponsiveHelper.responsiveValue<int>(
+      context,
+      mobile: 4,
+      tablet: 6,
+      desktop: 8,
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
+      child: GridView.count(
+        crossAxisCount: crossAxisCount,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 0.8,
         children: [
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            alignment: WrapAlignment.spaceBetween,
-            children: [
-              _buildActionButton(context, Icons.add_circle_outline, 'Entrada', AppColors.success, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.income)));
-              }),
-              _buildActionButton(context, Icons.remove_circle_outline, 'Saída', AppColors.alert, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.expense)));
-              }),
-              _buildActionButton(context, Icons.calculate_outlined, 'Fiscal', AppColors.warning, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaxSimulatorScreen()));
-              }),
-              _buildActionButton(context, Icons.chat_bubble_outline, 'Parceiro AI', AppColors.primary, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatScreen()));
-              }),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            alignment: WrapAlignment.spaceBetween,
-            children: [
-              _buildActionButton(context, Icons.assessment_outlined, 'Relatório', Colors.blue, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FinancialReportsScreen()));
-              }),
-              _buildActionButton(context, Icons.description_outlined, 'Orçamento', Colors.deepPurple, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BudgetSimulatorScreen()));
-              }),
-              _buildActionButton(context, Icons.person_outline, 'Perfil', Colors.blueGrey, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfessionalProfileScreen()));
-              }),
-              _buildActionButton(context, Icons.menu_book_outlined, 'Guia', Colors.orange, () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FiscalGuideScreen()));
-              }),
-            ],
-          ),
+          _buildActionButton(context, Icons.add_circle_outline, 'Entrada', AppColors.success, () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.income)));
+          }),
+          _buildActionButton(context, Icons.remove_circle_outline, 'Saída', AppColors.alert, () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AddTransactionScreen(initialType: TransactionType.expense)));
+          }),
+          _buildActionButton(context, Icons.calculate_outlined, 'Fiscal', AppColors.warning, () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaxSimulatorScreen()));
+          }),
+          _buildActionButton(context, Icons.chat_bubble_outline, 'Parceiro AI', AppColors.primary, () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChatScreen()));
+          }),
+          _buildActionButton(context, Icons.assessment_outlined, 'Relatório', Colors.blue, () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FinancialReportsScreen()));
+          }),
+          _buildActionButton(context, Icons.description_outlined, 'Orçamento', Colors.deepPurple, () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BudgetSimulatorScreen()));
+          }),
+          _buildActionButton(context, Icons.person_outline, 'Perfil', Colors.blueGrey, () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfessionalProfileScreen()));
+          }),
+          _buildActionButton(context, Icons.menu_book_outlined, 'Guia', Colors.orange, () {
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FiscalGuideScreen()));
+          }),
         ],
       ),
     );
@@ -291,13 +300,7 @@ class DashboardScreen extends ConsumerWidget {
             child: Icon(icon, color: color),
           ),
           const SizedBox(height: 8),
-          Text(
-            label, 
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -335,7 +338,7 @@ class DashboardScreen extends ConsumerWidget {
               child: Row(
                 children: [
                   Expanded(
-                    flex: (incomeWidth * 100).toInt(),
+                    flex: ((incomeWidth * 100).toInt()).clamp(1, 99),
                     child: Container(
                       height: 24,
                       decoration: BoxDecoration(
@@ -347,7 +350,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   Expanded(
-                    flex: ((1 - incomeWidth) * 100).toInt(),
+                    flex: (((1 - incomeWidth) * 100).toInt()).clamp(1, 99),
                     child: Container(
                       height: 24,
                       decoration: BoxDecoration(
@@ -431,36 +434,30 @@ class DashboardScreen extends ConsumerWidget {
               ),
               title: Text(t.title),
               subtitle: Text('${t.category} • ${DateFormat('dd/MM').format(t.date)}'),
-              trailing: SizedBox(
-                width: 120,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        '${isIncome ? '+' : '-'} ${fmt.format(t.amount)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isIncome ? AppColors.success : AppColors.alert,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${isIncome ? '+' : '-'} ${fmt.format(t.amount)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isIncome ? AppColors.success : AppColors.alert,
                     ),
-                    PopupMenuButton(
-                      onSelected: (val) {
-                        if (val == 'edit') {
-                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddTransactionScreen(transactionToEdit: t)));
-                        } else if (val == 'delete') {
-                          _showDeleteConfirm(context, ref, t.id);
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                        const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                  PopupMenuButton(
+                    onSelected: (val) {
+                      if (val == 'edit') {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddTransactionScreen(transactionToEdit: t)));
+                      } else if (val == 'delete') {
+                        _showDeleteConfirm(context, ref, t.id);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                      const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                    ],
+                  ),
+                ],
               ),
             );
           },
@@ -571,12 +568,9 @@ class DashboardScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  'Meta $contextLabel: ${fmt.format(target)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                'Meta $contextLabel: ${fmt.format(target)}',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               Text(
                 '$percentage%',
