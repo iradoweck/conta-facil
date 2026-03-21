@@ -5,6 +5,11 @@ import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
 import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:conta_facil/core/utils/responsive_helper.dart';
+import 'package:conta_facil/features/reports/domain/engines/time_filter_engine.dart';
+import 'package:conta_facil/features/reports/domain/services/report_service.dart';
+import 'package:conta_facil/features/reports/domain/engines/insight_engine.dart';
+import 'package:conta_facil/shared/models/finance_account.dart';
+import 'package:conta_facil/features/settings/domain/models/settings_models.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
@@ -14,52 +19,21 @@ class AnalyticsScreen extends ConsumerStatefulWidget {
 }
 
 class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
-  DateTime _startDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
-  DateTime _endDate = DateTime.now();
-  String _rangePreset = 'Este Mês';
-  bool? _isBusiness = true;
-
-  void _setPreset(String preset) {
-    final now = DateTime.now();
-    setState(() {
-      _rangePreset = preset;
-      switch (preset) {
-        case '7 Dias':
-          _startDate = now.subtract(const Duration(days: 7));
-          _endDate = now;
-          break;
-        case 'Este Mês':
-          _startDate = DateTime(now.year, now.month, 1);
-          _endDate = now;
-          break;
-        case '3 Meses':
-          _startDate = now.subtract(const Duration(days: 90));
-          _endDate = now;
-          break;
-        case '1 Ano':
-          _startDate = now.subtract(const Duration(days: 365));
-          _endDate = now;
-          break;
-        case '3 Anos':
-          _startDate = now.subtract(const Duration(days: 365 * 3));
-          _endDate = now;
-          break;
-      }
-    });
-  }
+  TimeFilter _timeFilter = TimeFilter.monthly;
+  DateTimeRange? _customRange;
+  AccountType? _accountTypeFilter = AccountType.business;
 
   Future<void> _selectCustomRange() async {
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
-      initialDateRange: DateTimeRange(start: _startDate, end: _endDate),
+      initialDateRange: TimeFilterEngine.getRange(_timeFilter),
     );
     if (picked != null) {
       setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-        _rangePreset = 'Personalizado';
+        _timeFilter = TimeFilter.custom;
+        _customRange = picked;
       });
     }
   }
@@ -67,6 +41,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(transactionsProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final settings = ref.watch(userSettingsProvider); // From transaction_provider.dart
     final currencyFormat = NumberFormat.currency(locale: 'pt_MZ', symbol: 'MT');
 
     return Scaffold(
@@ -77,42 +53,48 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           Expanded(
             child: transactionsAsync.when(
               data: (transactions) {
-                final reportStart = DateTime(_startDate.year, _startDate.month, _startDate.day);
-                final reportEnd = DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59, 59);
+                final range = TimeFilterEngine.getRange(_timeFilter, customRange: _customRange);
+                final reportData = ReportService.calculateReport(
+                  allTransactions: transactions,
+                  range: range,
+                  accountType: _accountTypeFilter,
+                );
 
-                final filtered = transactions.where((t) {
-                  final inRange = !t.date.isBefore(reportStart) && !t.date.isAfter(reportEnd);
-                  final inContext = _isBusiness == null || t.isBusiness == _isBusiness;
-                  return inRange && inContext;
-                }).toList();
-
-                if (filtered.isEmpty) {
+                if (reportData.filteredTransactions.isEmpty) {
                   return const Center(child: Text('Nenhuma transação no período.'));
                 }
+
+                final categories = categoriesAsync; 
+                final categoryNames = {for (var c in categories) c.id: c.name};
+                final insights = InsightEngine.generateInsights(reportData, categoryNames);
 
                 final isLargeScreen = ResponsiveHelper.isTablet(context) || ResponsiveHelper.isLandscape(context);
                 
                 return ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    _buildQuickSummary(reportData, currencyFormat),
+                    const SizedBox(height: 24),
+                    if (insights.isNotEmpty) ...[
+                      _buildInsightsSection(insights),
+                      const SizedBox(height: 24),
+                    ],
                     if (isLargeScreen) ...[
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _buildCategoryDistribution(filtered, currencyFormat)),
+                          Expanded(child: _buildCategoryDistribution(reportData, categoryNames, currencyFormat)),
                           const SizedBox(width: 16),
-                          Expanded(child: _buildMonthlyTrends(filtered, currencyFormat)),
+                          Expanded(child: _buildPerformanceAudit(reportData, currencyFormat)),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      _buildFixedExpensesImpact(filtered, currencyFormat, ref),
                     ] else ...[
-                      _buildCategoryDistribution(filtered, currencyFormat),
+                      _buildCategoryDistribution(reportData, categoryNames, currencyFormat),
                       const SizedBox(height: 24),
-                      _buildMonthlyTrends(filtered, currencyFormat),
-                      const SizedBox(height: 24),
-                      _buildFixedExpensesImpact(filtered, currencyFormat, ref),
+                      _buildPerformanceAudit(reportData, currencyFormat),
                     ],
+                    const SizedBox(height: 24),
+                    _buildFixedExpensesImpact(reportData, settings, currencyFormat),
                   ],
                 );
               },
@@ -128,53 +110,111 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   Widget _buildFilters() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.white,
-      child: Column(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+      ),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                flex: 1,
-                child: DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  value: _rangePreset,
-                  decoration: const InputDecoration(labelText: 'Período', border: OutlineInputBorder()),
-                  items: ['7 Dias', 'Este Mês', '3 Meses', '1 Ano', '3 Anos', 'Personalizado']
-                      .map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-                  onChanged: (p) => p == 'Personalizado' ? _selectCustomRange() : _setPreset(p!),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 1,
-                child: DropdownButtonFormField<bool?>(
-                  isExpanded: true,
-                  value: _isBusiness,
-                  decoration: const InputDecoration(labelText: 'Contexto', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: true, child: Text('Negócio')),
-                    DropdownMenuItem(value: false, child: Text('Pessoal')),
-                    DropdownMenuItem(value: null, child: Text('Ambos')),
-                  ],
-                  onChanged: (val) => setState(() => _isBusiness = val),
-                ),
-              ),
-            ],
+          Expanded(
+            child: DropdownButtonFormField<TimeFilter>(
+              isExpanded: true,
+              value: _timeFilter,
+              decoration: const InputDecoration(labelText: 'Período', border: OutlineInputBorder()),
+              items: TimeFilter.values.map((f) => DropdownMenuItem(
+                value: f, 
+                child: Text(TimeFilterEngine.getFilterLabel(f))
+              )).toList(),
+              onChanged: (f) => f == TimeFilter.custom ? _selectCustomRange() : setState(() => _timeFilter = f!),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButtonFormField<AccountType?>(
+              isExpanded: true,
+              value: _accountTypeFilter,
+              decoration: const InputDecoration(labelText: 'Contexto', border: OutlineInputBorder()),
+              items: const [
+                DropdownMenuItem(value: AccountType.business, child: Text('Negócio')),
+                DropdownMenuItem(value: AccountType.personal, child: Text('Pessoal')),
+                DropdownMenuItem(value: null, child: Text('Ambos')),
+              ],
+              onChanged: (val) => setState(() => _accountTypeFilter = val),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryDistribution(List<Transaction> transactions, NumberFormat fmt) {
-    final expenseMap = <String, double>{};
-    for (var t in transactions.where((t) => t.type == TransactionType.expense)) {
-      expenseMap[t.category] = (expenseMap[t.category] ?? 0.0) + t.amount;
-    }
+  Widget _buildQuickSummary(ReportData data, NumberFormat fmt) {
+    return Row(
+      children: [
+        Expanded(child: _buildSummaryCard('Entradas', data.totalInflow, AppColors.success, fmt)),
+        const SizedBox(width: 12),
+        Expanded(child: _buildSummaryCard('Saídas', data.totalOutflow, AppColors.alert, fmt)),
+        const SizedBox(width: 12),
+        Expanded(child: _buildSummaryCard('Saldo', data.netProfit, data.netProfit >= 0 ? AppColors.primary : AppColors.alert, fmt)),
+      ],
+    );
+  }
 
-    if (expenseMap.isEmpty) return const SizedBox.shrink();
+  Widget _buildSummaryCard(String label, double value, Color color, NumberFormat fmt) {
+    return Card(
+      elevation: 0,
+      color: color.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: color.withValues(alpha: 0.2))),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Column(
+          children: [
+            Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8), fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            FittedBox(child: Text(fmt.format(value), style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color))),
+          ],
+        ),
+      ),
+    );
+  }
 
-    final total = expenseMap.values.fold(0.0, (sum, val) => sum + val);
+  Widget _buildInsightsSection(List<FinancialInsight> insights) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Insights do seu Parceiro AI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 12),
+        ...insights.map((insight) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: insight.isWarning ? Colors.orange.withValues(alpha: 0.1) : AppColors.primary.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: insight.isWarning ? Colors.orange.withValues(alpha: 0.3) : AppColors.primary.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                Icon(insight.isWarning ? Icons.warning_amber_rounded : Icons.lightbulb_outline, color: insight.isWarning ? Colors.orange : AppColors.primary),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(insight.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(insight.message, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )).toList(),
+      ],
+    );
+  }
+
+  Widget _buildCategoryDistribution(ReportData data, Map<String, String> categoryNames, NumberFormat fmt) {
+    if (data.expensesByCategory.isEmpty) return const SizedBox.shrink();
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -185,13 +225,24 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
           children: [
             const Text('Distribuição de Gastos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 16),
-            ...expenseMap.entries.map((e) {
-              final pct = (e.value / total) * 100;
+            ...data.expensesByCategory.entries.map((e) {
+              final pct = (data.totalOutflow > 0) ? (e.value / data.totalOutflow) * 100 : 0.0;
+              final name = categoryNames[e.key] ?? 'Outros';
               return Column(
                 children: [
-                   _buildIndicator(e.key, e.value, fmt, pct),
+                   Row(
+                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                     children: [
+                       Text('$name (${pct.toStringAsFixed(0)}%)'),
+                       Text(fmt.format(e.value), style: const TextStyle(fontWeight: FontWeight.bold)),
+                     ],
+                   ),
                    const SizedBox(height: 8),
-                   LinearProgressIndicator(value: e.value / total, color: AppColors.alert, backgroundColor: Colors.grey[200]),
+                   LinearProgressIndicator(
+                     value: (data.totalOutflow > 0) ? e.value / data.totalOutflow : 0.0, 
+                     color: AppColors.alert, 
+                     backgroundColor: Colors.grey[200]
+                   ),
                    const SizedBox(height: 12),
                 ],
               );
@@ -202,21 +253,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     );
   }
 
-  Widget _buildIndicator(String label,double value, NumberFormat fmt, double pct) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('$label (${pct.toStringAsFixed(0)}%)'),
-        Text(fmt.format(value), style: const TextStyle(fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _buildMonthlyTrends(List<Transaction> transactions, NumberFormat fmt) {
-    final income = transactions.where((t) => t.type == TransactionType.income).fold(0.0, (sum, t) => sum + t.amount);
-    final expense = transactions.where((t) => t.type == TransactionType.expense).fold(0.0, (sum, t) => sum + t.amount);
-    final profit = income - expense;
-
+  Widget _buildPerformanceAudit(ReportData data, NumberFormat fmt) {
+    final profit = data.netProfit;
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
@@ -247,16 +285,14 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     );
   }
 
-  Widget _buildFixedExpensesImpact(List<Transaction> filteredTransactions, NumberFormat fmt, WidgetRef ref) {
-    final settings = ref.watch(userSettingsProvider);
-    
+  Widget _buildFixedExpensesImpact(ReportData data, UserSettings settings, NumberFormat fmt) {
     double minBalance = 0;
     String contextLabel = "";
 
-    if (_isBusiness == true) {
+    if (_accountTypeFilter == AccountType.business) {
       minBalance = settings.minMonthlyBalanceBusiness;
       contextLabel = "Negócio";
-    } else if (_isBusiness == false) {
+    } else if (_accountTypeFilter == AccountType.personal) {
       minBalance = settings.minMonthlyBalancePersonal;
       contextLabel = "Pessoal";
     } else {
@@ -266,8 +302,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     
     if (minBalance <= 0) return const SizedBox.shrink();
 
-    final totalIncome = filteredTransactions.where((t) => t.type == TransactionType.income).fold(0.0, (sum, t) => sum + t.amount);
-    final progress = (totalIncome / minBalance).clamp(0.0, 1.0);
+    final progress = (data.totalInflow / minBalance).clamp(0.0, 1.0);
 
     return Card(
        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -286,7 +321,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
              Text(
                progress >= 1.0 
                   ? 'Parabéns! Atingiu a reserva mínima $contextLabel com as entradas do período.'
-                  : 'Faltam ${fmt.format(minBalance - totalIncome)} para atingir o saldo mínimo seguro em $contextLabel.', 
+                  : 'Faltam ${fmt.format(minBalance - data.totalInflow)} para atingir o saldo mínimo seguro em $contextLabel.', 
                style: const TextStyle(color: Colors.white70, fontSize: 11)
              ),
            ],
