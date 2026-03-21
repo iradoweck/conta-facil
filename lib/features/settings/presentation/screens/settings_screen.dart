@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:conta_facil/features/settings/domain/models/settings_models.dart';
 import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
-import 'package:conta_facil/features/profile/presentation/screens/professional_profile_screen.dart';
+import 'package:conta_facil/features/profile/presentation/screens/edmilson_portal_screen.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -57,7 +57,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               subtitle: const Text('Alterar nome, cargo e biografia.'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProfessionalProfileScreen()),
+                MaterialPageRoute(builder: (_) => const EdmilsonPortalScreen()),
               ),
             ),
           ),

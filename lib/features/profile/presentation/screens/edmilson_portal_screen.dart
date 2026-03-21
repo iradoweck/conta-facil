@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'budget_simulator_screen.dart';
 
-class ProfessionalProfileScreen extends StatelessWidget {
-  const ProfessionalProfileScreen({super.key});
+class EdmilsonPortalScreen extends StatelessWidget {
+  const EdmilsonPortalScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -51,35 +51,49 @@ class ProfessionalProfileScreen extends StatelessWidget {
       pinned: true,
       backgroundColor: AppColors.primary,
       flexibleSpace: FlexibleSpaceBar(
-        title: const Text('Edmilson Muacigarro', 
+        title: const Text('Focado em Mim', 
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
         background: Stack(
           fit: StackFit.expand,
           children: [
             Container(color: AppColors.primary),
             Positioned(
-              top: 40,
+              top: 60,
               right: 20,
               child: Opacity(
-                opacity: 0.2,
-                child: Image.asset('assets/images/app_icon.png', height: 100),
+                opacity: 0.1,
+                child: Image.asset('assets/images/logo.png', height: 120),
               ),
             ),
             Positioned(
-              bottom: 60,
+              bottom: 80,
               left: 0,
               right: 0,
               child: Center(
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 4),
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-                  ),
-                  child: const Icon(Icons.person, size: 80, color: AppColors.primary),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                      ),
+                      child: const Icon(Icons.person, size: 60, color: AppColors.primary),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Edmilson Muacigarro',
+                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const Text(
+                      'O teu parceiro de crescimento',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -95,15 +109,46 @@ class ProfessionalProfileScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            _buildBadge('Contabilista'),
+            _buildBadge('Contabilista Sênior'),
             const SizedBox(width: 8),
-            _buildBadge('Desenvolvedor'),
+            _buildBadge('Software Architect'),
           ],
         ),
         const SizedBox(height: 16),
         Text(
           'Especialista em transformar complexidade contabilística em soluções digitais simples para empreendedores moçambicanos.',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 18, height: 1.5),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 16, height: 1.5, color: Colors.blueGrey[800]),
+        ),
+        const SizedBox(height: 32),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.lightbulb_outline, color: AppColors.warning),
+                  SizedBox(width: 8),
+                  Text('Sabedoria & Avisos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                '"O sucesso financeiro não é sobre quanto ganhas, mas sobre como geras o que sobra. No Conta Fácil, o meu objetivo é que tu tenhas o controlo absoluto do teu destino profissional."',
+                style: TextStyle(fontStyle: FontStyle.italic, fontSize: 14, color: AppColors.primary),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Conselho Real: Abre os estudos de fluxos todos os domingos. É lá que o teu futuro é escrito.',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.alert),
+              ),
+            ],
+          ),
         ),
       ],
     );

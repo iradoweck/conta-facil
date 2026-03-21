@@ -9,15 +9,18 @@ import 'package:conta_facil/features/financeiro/domain/models/transaction.dart';
 import 'add_transaction_screen.dart';
 import 'package:conta_facil/features/fiscal/presentation/screens/tax_simulator_screen.dart';
 import 'package:conta_facil/features/chat/presentation/screens/chat_screen.dart';
-import 'package:conta_facil/features/profile/presentation/screens/professional_profile_screen.dart';
+import 'package:conta_facil/features/profile/presentation/screens/edmilson_portal_screen.dart';
+import 'package:conta_facil/features/profile/presentation/screens/user_account_screen.dart';
 import 'package:conta_facil/features/profile/presentation/screens/budget_simulator_screen.dart';
 import 'package:conta_facil/features/fiscal/presentation/screens/fiscal_guide_screen.dart';
 import 'package:conta_facil/features/reports/presentation/screens/financial_reports_screen.dart';
 import 'package:conta_facil/features/reports/presentation/screens/analytics_screen.dart';
 import 'package:conta_facil/features/financeiro/presentation/screens/all_transactions_screen.dart';
 import 'package:conta_facil/features/settings/presentation/screens/settings_screen.dart';
+import 'package:conta_facil/features/settings/presentation/screens/general_settings_screen.dart';
 import 'package:conta_facil/features/education/presentation/screens/education_hub_screen.dart';
 import 'package:conta_facil/features/education/domain/models/education_item.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -33,21 +36,27 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset('assets/images/logo.png', height: 32),
+        title: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 160),
+          child: Image.asset('assets/images/logo.png', height: 32, fit: BoxFit.contain),
+        ),
         actions: [
           IconButton(
+            tooltip: 'Focado em Mim: Edmilson Muacigarro',
             icon: const Icon(Icons.person_pin_outlined),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProfessionalProfileScreen()),
+              MaterialPageRoute(builder: (_) => const EdmilsonPortalScreen()),
             ),
           ),
           IconButton(
+            tooltip: 'Configurações do App',
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              MaterialPageRoute(builder: (_) => const GeneralSettingsScreen()),
             ),
           ),
           IconButton(
+            tooltip: 'Sair',
             icon: const Icon(Icons.logout),
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),
           ),
@@ -61,6 +70,8 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               const SizedBox(height: 16),
               _buildContextSwitcher(context, ref),
+              const SizedBox(height: 16),
+              _buildUpcomingAlerts(context, ref),
               const SizedBox(height: 16),
               
               // Adaptive Section: Balance & Summary Chart
@@ -276,7 +287,7 @@ class DashboardScreen extends ConsumerWidget {
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BudgetSimulatorScreen()));
           }),
           _buildActionButton(context, Icons.person_outline, 'Perfil', Colors.blueGrey, () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfessionalProfileScreen()));
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const UserAccountScreen()));
           }),
           _buildActionButton(context, Icons.menu_book_outlined, 'Guia', Colors.orange, () {
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FiscalGuideScreen()));
@@ -307,73 +318,170 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildSummaryChart(BuildContext context, double income, double expense) {
-    final total = income + expense;
-    final incomeWidth = total > 0 ? (income / total) : 0.5;
-    
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
+      color: Colors.white,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Distribuição Real', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(
-                  income >= expense ? 'Lucrativo' : 'Atenção',
-                  style: TextStyle(
-                    color: income >= expense ? AppColors.success : AppColors.alert,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Distribuição Real', 
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        income >= expense ? 'Saldo Positivo' : 'Alerta de Fluxo',
+                        style: TextStyle(
+                          color: income >= expense ? AppColors.success : AppColors.alert,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AnalyticsScreen())),
+                  icon: const Icon(Icons.analytics_outlined, size: 16),
+                  label: const Text('Ver Estudos', style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Row(
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 180,
+              child: Stack(
                 children: [
-                  Expanded(
-                    flex: ((incomeWidth * 100).toInt()).clamp(1, 99),
-                    child: Container(
-                      height: 24,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                  PieChart(
+                    PieChartData(
+                      sectionsSpace: 4,
+                      centerSpaceRadius: 60,
+                      sections: [
+                        PieChartSectionData(
+                          color: AppColors.success,
+                          value: income == 0 && expense == 0 ? 1 : income,
+                          title: '',
+                          radius: 12,
+                          badgeWidget: income > 0 ? const Icon(Icons.trending_up, color: Colors.white, size: 14) : null,
                         ),
-                      ),
-                      child: const Center(child: Icon(Icons.trending_up, color: Colors.white, size: 14)),
+                        PieChartSectionData(
+                          color: AppColors.alert,
+                          value: income == 0 && expense == 0 ? 0 : expense,
+                          title: '',
+                          radius: 12,
+                          badgeWidget: expense > 0 ? const Icon(Icons.trending_down, color: Colors.white, size: 14) : null,
+                        ),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    flex: (((1 - incomeWidth) * 100).toInt()).clamp(1, 99),
-                    child: Container(
-                      height: 24,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.alert, AppColors.alert.withOpacity(0.8)],
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${((income / (income + expense + 0.0001)) * 100).toInt()}%',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: AppColors.primary),
                         ),
-                      ),
-                      child: const Center(child: Icon(Icons.trending_down, color: Colors.white, size: 14)),
+                        const Text('Eficiência', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildLegendItem('Entradas', AppColors.success),
-                _buildLegendItem('Saídas', AppColors.alert),
+                _buildLegendItem('Ganhos', AppColors.success),
+                _buildLegendItem('Gastos', AppColors.alert),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUpcomingAlerts(BuildContext context, WidgetRef ref) {
+    final expenses = ref.watch(fixedExpensesProvider);
+    final filter = ref.watch(dashFilterProvider);
+    final today = DateTime.now().day;
+
+    final alerts = expenses.where((e) {
+      if (filter != null && e.isBusiness != filter) return false;
+      // Alert if due within 3 days or today
+      final diff = e.dueDay - today;
+      return diff >= 0 && diff <= 3;
+    }).toList();
+
+    if (alerts.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.warning.withOpacity(0.1), Colors.orange.withOpacity(0.05)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.notification_important_outlined, color: AppColors.warning, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Atenção às Contas!',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.alert),
+              ),
+              const Spacer(),
+              Text(
+                '${alerts.length} Próximas',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.alert),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...alerts.map((e) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    e.title,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  'Vence dia ${e.dueDay}',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          )).toList(),
+        ],
       ),
     );
   }
