@@ -42,17 +42,17 @@ class DashboardScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            tooltip: 'Focado em Mim: Edmilson Muacigarro',
-            icon: const Icon(Icons.person_pin_outlined),
+            tooltip: 'Meu Perfil',
+            icon: const Icon(Icons.person_outline),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const EdmilsonPortalScreen()),
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
           ),
           IconButton(
-            tooltip: 'Configurações do App',
-            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Focado em Mim: Edmilson Muacigarro',
+            icon: const Icon(Icons.psychology_outlined),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const GeneralSettingsScreen()),
+              MaterialPageRoute(builder: (_) => const EdmilsonPortalScreen()),
             ),
           ),
           IconButton(
@@ -285,9 +285,6 @@ class DashboardScreen extends ConsumerWidget {
           }),
           _buildActionButton(context, Icons.description_outlined, 'Orçamento', Colors.deepPurple, () {
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BudgetSimulatorScreen()));
-          }),
-          _buildActionButton(context, Icons.person_outline, 'Perfil', Colors.blueGrey, () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const UserAccountScreen()));
           }),
           _buildActionButton(context, Icons.menu_book_outlined, 'Guia', Colors.orange, () {
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FiscalGuideScreen()));

@@ -64,28 +64,130 @@ class FixedExpense {
   }
 }
 
+class UserProfile {
+  final String name;
+  final String nickname;
+  final String email;
+  final String password;
+  final String city;
+  final String country;
+  final String province;
+  final String phone;
+  final String bio;
+  final String? photoPath;
+
+  UserProfile({
+    this.name = 'Utilizador',
+    this.nickname = '',
+    this.email = '',
+    this.password = '',
+    this.city = '',
+    this.country = 'Moçambique',
+    this.province = 'Maputo Cidade',
+    this.phone = '',
+    this.bio = 'O meu parceiro de crescimento',
+    this.photoPath,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'nickname': nickname,
+    'email': email,
+    'password': password,
+    'city': city,
+    'country': country,
+    'province': province,
+    'phone': phone,
+    'bio': bio,
+    'photoPath': photoPath,
+  };
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return UserProfile(
+      name: json['name'] ?? 'Utilizador',
+      nickname: json['nickname'] ?? '',
+      email: json['email'] ?? '',
+      password: json['password'] ?? '',
+      city: json['city'] ?? '',
+      country: json['country'] ?? 'Moçambique',
+      province: json['province'] ?? 'Maputo Cidade',
+      phone: json['phone'] ?? '',
+      bio: json['bio'] ?? 'O meu parceiro de crescimento',
+      photoPath: json['photoPath'],
+    );
+  }
+}
+
+class FinancialGoal {
+  final String id;
+  final String title;
+  final double targetAmount;
+  final DateTime? deadline;
+  final bool isBusiness;
+  final String? category; // Optional: associated category for tracking
+
+  FinancialGoal({
+    required this.id,
+    required this.title,
+    required this.targetAmount,
+    this.deadline,
+    this.isBusiness = true,
+    this.category,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'targetAmount': targetAmount,
+    'deadline': deadline?.toIso8601String(),
+    'isBusiness': isBusiness,
+    'category': category,
+  };
+
+  factory FinancialGoal.fromJson(Map<String, dynamic> json) {
+    return FinancialGoal(
+      id: json['id'],
+      title: json['title'],
+      targetAmount: (json['targetAmount'] as num).toDouble(),
+      deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
+      isBusiness: json['isBusiness'] ?? true,
+      category: json['category'],
+    );
+  }
+}
+
 class UserSettings {
   final double minMonthlyBalanceBusiness;
   final double minMonthlyBalancePersonal;
   final bool defaultIsBusiness;
+  final UserProfile profile;
+  final List<FinancialGoal> goals;
 
   UserSettings({
     this.minMonthlyBalanceBusiness = 0.0,
     this.minMonthlyBalancePersonal = 0.0,
     this.defaultIsBusiness = true,
-  });
+    UserProfile? profile,
+    this.goals = const [],
+  }) : profile = profile ?? UserProfile();
 
   Map<String, dynamic> toJson() => {
     'minMonthlyBalanceBusiness': minMonthlyBalanceBusiness,
     'minMonthlyBalancePersonal': minMonthlyBalancePersonal,
     'defaultIsBusiness': defaultIsBusiness,
+    'profile': profile.toJson(),
+    'goals': goals.map((g) => g.toJson()).toList(),
   };
 
   factory UserSettings.fromJson(Map<String, dynamic> json) {
     return UserSettings(
-      minMonthlyBalanceBusiness: (json['minMonthlyBalanceBusiness'] ?? json['minMonthlyBalance'] ?? 0.0) as double,
-      minMonthlyBalancePersonal: (json['minMonthlyBalancePersonal'] ?? 0.0) as double,
+      minMonthlyBalanceBusiness: (json['minMonthlyBalanceBusiness'] ?? json['minMonthlyBalance'] ?? 0.0).toDouble(),
+      minMonthlyBalancePersonal: (json['minMonthlyBalancePersonal'] ?? 0.0).toDouble(),
       defaultIsBusiness: json['defaultIsBusiness'] ?? true,
+      profile: json['profile'] != null ? UserProfile.fromJson(json['profile']) : null,
+      goals: json['goals'] != null 
+        ? (json['goals'] as List).map((g) => FinancialGoal.fromJson(g)).toList()
+        : [],
     );
   }
 }

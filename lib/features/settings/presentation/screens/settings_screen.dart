@@ -4,8 +4,9 @@ import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:conta_facil/features/settings/domain/models/settings_models.dart';
 import 'package:conta_facil/features/financeiro/providers/transaction_provider.dart';
 import 'package:conta_facil/features/profile/presentation/screens/edmilson_portal_screen.dart';
-
+import 'package:conta_facil/features/settings/presentation/screens/personal_details_screen.dart';
 import 'package:uuid/uuid.dart';
+import 'package:intl/intl.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -15,113 +16,146 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  final _minBalanceBusinessController = TextEditingController();
-  final _minBalancePersonalController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  final _goalTitleController = TextEditingController();
+  final _goalAmountController = TextEditingController();
 
   @override
   void dispose() {
-    _minBalanceBusinessController.dispose();
-    _minBalancePersonalController.dispose();
+    _goalTitleController.dispose();
+    _goalAmountController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<CategoryItem> categories = ref.watch(categoriesProvider);
-    final List<FixedExpense> fixedExpenses = ref.watch(fixedExpensesProvider);
     final settings = ref.watch(userSettingsProvider);
-
-    // Populate controllers if empty
-    if (_minBalanceBusinessController.text.isEmpty && settings.minMonthlyBalanceBusiness > 0) {
-      _minBalanceBusinessController.text = settings.minMonthlyBalanceBusiness.toStringAsFixed(2);
-    }
-    if (_minBalancePersonalController.text.isEmpty && settings.minMonthlyBalancePersonal > 0) {
-      _minBalancePersonalController.text = settings.minMonthlyBalancePersonal.toStringAsFixed(2);
-    }
+    final accounts = ref.watch(accountsProvider);
+    final categories = ref.watch(categoriesProvider);
+    final fixedExpenses = ref.watch(fixedExpensesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Configurações')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildSectionTitle('Dados do Utilizador'),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.person_outline, color: AppColors.primary),
-              title: const Text('Perfil Profissional'),
-              subtitle: const Text('Alterar nome, cargo e biografia.'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const EdmilsonPortalScreen()),
+      backgroundColor: Colors.grey[50],
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverHeader(settings.profile),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle('👤 Informações Gerais'),
+                  _buildQuickInfoCard(context, settings.profile),
+                  const SizedBox(height: 32),
+                  
+                  _buildSectionTitle('💰 Gestão Financeira'),
+                  _buildFinanceModule(settings, accounts, categories, fixedExpenses),
+                  const SizedBox(height: 32),
+
+                  _buildSectionTitle('🎯 Metas e Reservas'),
+                  _buildGoalsModule(settings.goals),
+                  const SizedBox(height: 100),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Metas Financeiras'),
-          _buildMetaCard(
-            'Meta Negócio',
-            'Reserva estratégica para a empresa.',
-            _minBalanceBusinessController,
-            (val) => ref.read(userSettingsProvider.notifier).updateSettings(
-              UserSettings(
-                minMonthlyBalanceBusiness: val,
-                minMonthlyBalancePersonal: settings.minMonthlyBalancePersonal,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          _buildMetaCard(
-            'Meta Pessoal',
-            'Reserva para despesas pessoais.',
-            _minBalancePersonalController,
-            (val) => ref.read(userSettingsProvider.notifier).updateSettings(
-              UserSettings(
-                minMonthlyBalanceBusiness: settings.minMonthlyBalanceBusiness,
-                minMonthlyBalancePersonal: val,
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Gestão de Contas'),
-          _buildAccountList(ref.watch(accountsProvider)),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Gestão de Categorias'),
-          _buildCategoryList('Entradas', categories.where((CategoryItem c) => c.isIncome).toList(), true),
-          _buildCategoryList('Saídas', categories.where((CategoryItem c) => !c.isIncome).toList(), false),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Despesas Fixas'),
-          _buildFixedExpensesList(fixedExpenses),
         ],
       ),
     );
   }
 
-  Widget _buildMetaCard(String title, String subtitle, TextEditingController controller, Function(double) onSave) {
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: SizedBox(
-          width: 100,
-          child: TextField(
-            controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(suffixText: 'MT'),
-            textAlign: TextAlign.end,
-            onEditingComplete: () {
-              final value = double.tryParse(controller.text) ?? 0.0;
-              onSave(value);
-              FocusScope.of(context).unfocus();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Meta atualizada!'), duration: Duration(seconds: 1)),
-              );
-            },
+  Widget _buildSliverHeader(UserProfile profile) {
+    return SliverAppBar(
+      expandedHeight: 240,
+      pinned: true,
+      stretch: true,
+      backgroundColor: AppColors.primary,
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        title: Text(
+          profile.nickname.isNotEmpty ? profile.nickname : profile.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            shadows: [Shadow(color: Colors.black26, blurRadius: 10)],
           ),
+        ),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.primary, Color(0xFF001F3F)],
+                ),
+              ),
+            ),
+            // Decorative circles
+            Positioned(
+              top: -50,
+              right: -50,
+              child: Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
+                  Hero(
+                    tag: 'profile-avatar',
+                    child: Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          )
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          profile.name[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      profile.bio,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -129,40 +163,280 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary)),
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          color: Colors.blueGrey[800],
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.5,
+        ),
+      ),
     );
   }
 
-  Widget _buildCategoryList(String title, List<CategoryItem> items, bool isIncome) {
+  Widget _buildQuickInfoCard(BuildContext context, UserProfile profile) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          _buildSettingsTile(
+            icon: Icons.person_outline,
+            title: 'Dados Pessoais',
+            subtitle: 'Nome, Email, Telefone, Localização...',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PersonalDetailsScreen()),
+            ),
+          ),
+          Divider(height: 1, indent: 64, color: Colors.grey[100]),
+          _buildSettingsTile(
+            icon: Icons.auto_awesome_outlined,
+            title: 'Portal do Edmilson',
+            subtitle: 'Seu assistente financeiro pessoal',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const EdmilsonPortalScreen()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFinanceModule(
+    UserSettings settings,
+    List<FinanceAccount> accounts,
+    List<CategoryItem> categories,
+    List<FixedExpense> fixedExpenses,
+  ) {
+    return Column(
+      children: [
+        _buildModuleExpansion(
+          title: 'Gestão de Contas',
+          subtitle: '${accounts.length} contas configuradas',
+          icon: Icons.account_balance_outlined,
+          child: _buildAccountList(accounts),
+        ),
+        const SizedBox(height: 12),
+        _buildModuleExpansion(
+          title: 'Categorias de Transações',
+          subtitle: 'Organize suas entradas e saídas',
+          icon: Icons.category_outlined,
+          child: Column(
+            children: [
+              _buildCategorySublist('Entradas', categories.where((c) => c.isIncome).toList(), true),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Divider(),
+              ),
+              _buildCategorySublist('Saídas', categories.where((c) => !c.isIncome).toList(), false),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        _buildModuleExpansion(
+          title: 'Despesas Fixas',
+          subtitle: 'Compromissos mensais recorrentes',
+          icon: Icons.event_repeat_outlined,
+          child: _buildFixedExpensesList(fixedExpenses),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoalsModule(List<FinancialGoal> goals) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          if (goals.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                children: [
+                  Icon(Icons.track_changes, size: 48, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Nenhuma meta definida ainda',
+                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: goals.length,
+              separatorBuilder: (_, __) => Divider(height: 1, indent: 64, color: Colors.grey[100]),
+              itemBuilder: (context, index) {
+                final goal = goals[index];
+                return ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (goal.isBusiness ? AppColors.primary : AppColors.accent).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      goal.isBusiness ? Icons.business_center_outlined : Icons.person_outline,
+                      color: goal.isBusiness ? AppColors.primary : AppColors.accent,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(goal.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(
+                    'Meta: ${NumberFormat.currency(locale: 'pt_MZ', symbol: 'MT').format(goal.targetAmount)}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                    onPressed: () => ref.read(userSettingsProvider.notifier).deleteGoal(goal.id),
+                  ),
+                );
+              },
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton.icon(
+              onPressed: () => _showGoalDialog(),
+              icon: const Icon(Icons.add_task),
+              label: const Text('Nova Meta Financeira'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 45),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModuleExpansion({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      child: ExpansionTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        shape: const RoundedRectangleBorder(side: BorderSide.none),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [child],
+      ),
+    );
+  }
+
+  Widget _buildSettingsTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(icon, color: AppColors.primary, size: 24),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildAccountList(List<FinanceAccount> accounts) {
+    return Column(
+      children: [
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: accounts.length,
+          itemBuilder: (context, index) {
+            final acc = accounts[index];
+            return ListTile(
+              dense: true,
+              leading: Icon(acc.icon, color: AppColors.accent, size: 20),
+              title: Text(acc.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+              subtitle: Text(acc.isBusiness ? 'Conta Negócio' : 'Conta Pessoal'),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                onPressed: () => ref.read(accountsProvider.notifier).deleteAccount(acc.id),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: () => _showAccountDialog(),
+          icon: const Icon(Icons.add),
+          label: const Text('Adicionar Nova Conta'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategorySublist(String title, List<CategoryItem> items, bool isIncome) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(title, style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.grey)),
-        ),
-        ...items.map((item) => ListTile(
-          leading: Icon(item.icon, color: AppColors.primary),
-          title: Text(item.name),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 20),
-                onPressed: () => _showCategoryDialog(item: item, isIncome: isIncome),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blueGrey)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ...items.map((cat) => Chip(
+              label: Text(cat.name, style: const TextStyle(fontSize: 12)),
+              avatar: Icon(cat.icon, size: 14, color: AppColors.primary),
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(color: Colors.grey[200]!),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                onPressed: () => ref.read(categoriesProvider.notifier).deleteCategory(item.id),
-              ),
-            ],
-          ),
-        )),
-        TextButton.icon(
-          onPressed: () => _showCategoryDialog(isIncome: isIncome),
-          icon: const Icon(Icons.add),
-          label: Text('Adicionar Categoria de $title'),
+              onDeleted: () => ref.read(categoriesProvider.notifier).deleteCategory(cat.id),
+              deleteIconColor: Colors.red[300],
+            )),
+            ActionChip(
+              avatar: const Icon(Icons.add, size: 16, color: Colors.white),
+              label: const Text('Add', style: TextStyle(color: Colors.white, fontSize: 11)),
+              backgroundColor: AppColors.primary,
+              onPressed: () => _showCategoryDialog(isIncome: isIncome),
+            ),
+          ],
         ),
       ],
     );
@@ -171,99 +445,136 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildFixedExpensesList(List<FixedExpense> expenses) {
     return Column(
       children: [
-        if (expenses.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('Nenhuma despesa fixa cadastrada.', style: TextStyle(color: Colors.grey)),
-          ),
-        ...expenses.map((e) => Card(
-          child: ListTile(
-            title: Text(e.title),
-            subtitle: Text('${e.isBusiness ? 'Negócio' : 'Pessoal'} • Vence dia ${e.dueDay.toString().padLeft(2, '0')} • ${e.amount} MT'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  onPressed: () => _showFixedExpenseDialog(expense: e),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                  onPressed: () => ref.read(fixedExpensesProvider.notifier).deleteExpense(e.id),
-                ),
-              ],
-            ),
-          ),
-        )),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: expenses.length,
+          itemBuilder: (context, index) {
+            final e = expenses[index];
+            return ListTile(
+              dense: true,
+              title: Text(e.title, style: const TextStyle(fontWeight: FontWeight.w500)),
+              subtitle: Text('Dia ${e.dueDay} • ${NumberFormat.currency(locale: 'pt_MZ', symbol: 'MT').format(e.amount)}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                onPressed: () => ref.read(fixedExpensesProvider.notifier).deleteExpense(e.id),
+              ),
+            );
+          },
+        ),
         const SizedBox(height: 8),
         TextButton.icon(
           onPressed: () => _showFixedExpenseDialog(),
           icon: const Icon(Icons.add),
-          label: const Text('Nova Despesa Fixa'),
+          label: const Text('Adicionar Despesa Fixa'),
         ),
       ],
     );
   }
 
-  void _showCategoryDialog({CategoryItem? item, required bool isIncome}) {
-    final nameController = TextEditingController(text: item?.name);
-    
+  // --- Dialogs ---
+
+  void _showGoalDialog() {
+    bool isBusiness = true;
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('🎯 Nova Meta Financeira'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _goalTitleController,
+                decoration: const InputDecoration(labelText: 'Descrição da Meta (ex: Fundo Emergência)', border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _goalAmountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Valor Alvo (MT)', border: OutlineInputBorder(), prefixText: 'MT '),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Meta de Negócio?'),
+                subtitle: Text(isBusiness ? 'Empresarial' : 'Pessoal'),
+                value: isBusiness,
+                activeColor: AppColors.primary,
+                onChanged: (val) => setDialogState(() => isBusiness = val),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () {
+                if (_goalTitleController.text.isNotEmpty && _goalAmountController.text.isNotEmpty) {
+                  final goal = FinancialGoal(
+                    id: const Uuid().v4(),
+                    title: _goalTitleController.text,
+                    targetAmount: double.tryParse(_goalAmountController.text) ?? 0.0,
+                    isBusiness: isBusiness,
+                    deadline: DateTime.now().add(const Duration(days: 30)), // Default 1 month
+                  );
+                  ref.read(userSettingsProvider.notifier).addGoal(goal);
+                  _goalTitleController.clear();
+                  _goalAmountController.clear();
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Definir Meta'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCategoryDialog({required bool isIncome}) {
+    final nameController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(item == null ? 'Nova Categoria' : 'Editar Categoria'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: 'Nome da Categoria'),
-          autofocus: true,
-        ),
+        title: Text(isIncome ? 'Nova Categoria de Entrada' : 'Nova Categoria de Saída'),
+        content: TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nome da Categoria')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () {
               if (nameController.text.isNotEmpty) {
-                final newItem = CategoryItem(
-                  id: item?.id ?? const Uuid().v4(),
+                final cat = CategoryItem(
+                  id: const Uuid().v4(),
                   name: nameController.text,
                   isIncome: isIncome,
-                  icon: item?.icon ?? (isIncome ? Icons.add_circle_outline : Icons.remove_circle_outline),
+                  icon: isIncome ? Icons.add_circle : Icons.remove_circle,
                 );
-                if (item == null) {
-                  ref.read(categoriesProvider.notifier).addCategory(newItem);
-                } else {
-                  ref.read(categoriesProvider.notifier).updateCategory(newItem);
-                }
+                ref.read(categoriesProvider.notifier).addCategory(cat);
                 Navigator.pop(context);
               }
             },
-            child: const Text('Guardar'),
+            child: const Text('Criar'),
           ),
         ],
       ),
     );
   }
 
-  void _showFixedExpenseDialog({FixedExpense? expense}) {
-    final titleController = TextEditingController(text: expense?.title);
-    final amountController = TextEditingController(text: expense?.amount.toString());
-    final dayController = TextEditingController(text: expense?.dueDay.toString());
-    bool isBusiness = expense?.isBusiness ?? true;
-
+  void _showAccountDialog() {
+    final nameController = TextEditingController();
+    bool isBusiness = true;
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(expense == null ? 'Nova Despesa Fixa' : 'Editar Despesa Fixa'),
+          title: const Text('🏦 Nova Conta'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título')),
-              TextField(controller: amountController, decoration: const InputDecoration(labelText: 'Valor'), keyboardType: TextInputType.number),
-              TextField(controller: dayController, decoration: const InputDecoration(labelText: 'Dia de Vencimento'), keyboardType: TextInputType.number),
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nome da Conta')),
               const SizedBox(height: 16),
               SwitchListTile(
                 title: const Text('Negócio?'),
-                subtitle: Text(isBusiness ? 'Despesa da Empresa' : 'Despesa Pessoal'),
                 value: isBusiness,
                 onChanged: (val) => setDialogState(() => isBusiness = val),
               ),
@@ -273,23 +584,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () {
-                if (titleController.text.isNotEmpty) {
-                  final newExpense = FixedExpense(
-                    id: expense?.id ?? const Uuid().v4(),
-                    title: titleController.text,
-                    amount: double.tryParse(amountController.text) ?? 0,
-                    dueDay: int.tryParse(dayController.text) ?? 1,
+                if (nameController.text.isNotEmpty) {
+                  final acc = FinanceAccount(
+                    id: const Uuid().v4(),
+                    name: nameController.text,
                     isBusiness: isBusiness,
+                    icon: Icons.account_balance,
                   );
-                  if (expense == null) {
-                    ref.read(fixedExpensesProvider.notifier).addExpense(newExpense);
-                  } else {
-                    ref.read(fixedExpensesProvider.notifier).updateExpense(newExpense);
-                  }
+                  ref.read(accountsProvider.notifier).addAccount(acc);
                   Navigator.pop(context);
                 }
               },
-              child: const Text('Guardar'),
+              child: const Text('Criar Conta'),
             ),
           ],
         ),
@@ -297,117 +603,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildAccountList(List<FinanceAccount> accounts) {
-    return Column(
-      children: [
-        if (accounts.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('Nenhuma conta cadastrada.', style: TextStyle(color: Colors.grey)),
-          ),
-        ...accounts.map((acc) => Card(
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: Icon(acc.icon, color: AppColors.primary, size: 20),
-            ),
-            title: Text(acc.name),
-            subtitle: Text(acc.isBusiness ? 'Negócio' : 'Pessoal'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  onPressed: () => _showAccountDialog(account: acc),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                  onPressed: () => ref.read(accountsProvider.notifier).deleteAccount(acc.id),
-                ),
-              ],
-            ),
-          ),
-        )),
-        const SizedBox(height: 8),
-        TextButton.icon(
-          onPressed: () => _showAccountDialog(),
-          icon: const Icon(Icons.add),
-          label: const Text('Nova Conta / Carteira'),
-        ),
-      ],
-    );
-  }
-
-  void _showAccountDialog({FinanceAccount? account}) {
-    final nameController = TextEditingController(text: account?.name);
-    bool isBusiness = account?.isBusiness ?? true;
-    IconData selectedIcon = account?.icon ?? Icons.account_balance;
-
-    final List<IconData> availableIcons = [
-      Icons.account_balance,
-      Icons.money,
-      Icons.phone_android,
-      Icons.credit_card,
-      Icons.savings,
-      Icons.wallet,
-    ];
-
+  void _showFixedExpenseDialog() {
+    final titleController = TextEditingController();
+    final amountController = TextEditingController();
+    final dayController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(account == null ? 'Nova Conta' : 'Editar Conta'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nome da Conta')),
-                const SizedBox(height: 16),
-                const Text('Escolha um Ícone', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 12,
-                  children: availableIcons.map((icon) => GestureDetector(
-                    onTap: () => setDialogState(() => selectedIcon = icon),
-                    child: CircleAvatar(
-                      backgroundColor: selectedIcon == icon ? AppColors.primary : Colors.grey[200],
-                      child: Icon(icon, color: selectedIcon == icon ? Colors.white : Colors.grey[600], size: 20),
-                    ),
-                  )).toList(),
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Negócio?'),
-                  subtitle: Text(isBusiness ? 'Conta da Empresa' : 'Conta Pessoal'),
-                  value: isBusiness,
-                  onChanged: (val) => setDialogState(() => isBusiness = val),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty) {
-                  final newAccount = FinanceAccount(
-                    id: account?.id ?? const Uuid().v4(),
-                    name: nameController.text,
-                    icon: selectedIcon,
-                    isBusiness: isBusiness,
-                  );
-                  if (account == null) {
-                    ref.read(accountsProvider.notifier).addAccount(newAccount);
-                  } else {
-                    ref.read(accountsProvider.notifier).updateAccount(newAccount);
-                  }
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Guardar'),
-            ),
+      builder: (context) => AlertDialog(
+        title: const Text('📝 Nova Despesa Fixa'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Título')),
+            TextField(controller: amountController, decoration: const InputDecoration(labelText: 'Valor (MT)'), keyboardType: TextInputType.number),
+            TextField(controller: dayController, decoration: const InputDecoration(labelText: 'Dia do Mês (1-31)'), keyboardType: TextInputType.number),
           ],
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              if (titleController.text.isNotEmpty && amountController.text.isNotEmpty) {
+                final exp = FixedExpense(
+                  id: const Uuid().v4(),
+                  title: titleController.text,
+                  amount: double.tryParse(amountController.text) ?? 0.0,
+                  dueDay: int.tryParse(dayController.text) ?? 1,
+                  isBusiness: true,
+                );
+                ref.read(fixedExpensesProvider.notifier).addExpense(exp);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Adicionar'),
+          ),
+        ],
       ),
     );
   }

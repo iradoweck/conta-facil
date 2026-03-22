@@ -52,7 +52,7 @@ class TransactionRepository {
   Future<UserSettings> getSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final String? encodedData = prefs.getString(_settingsKey);
-    if (encodedData == null) return UserSettings();
+    if (encodedData == null) return UserSettings(profile: UserProfile());
     final Map<String, dynamic> decodedData = json.decode(encodedData);
     return UserSettings.fromJson(decodedData);
   }

@@ -4,6 +4,7 @@ class AppColors {
   // Brand Colors
   static const Color primary = Color(0xFF003366); // Azul Profissional (Zedeck's Style)
   static const Color accent = Color(0xFF00A859);  // Verde (Lucro / Crescimento)
+  static const Color secondary = accent;
   static const Color alert = Color(0xFFE63946);   // Vermelho (Prejuízo / Alerta)
   
   // Background & Surface

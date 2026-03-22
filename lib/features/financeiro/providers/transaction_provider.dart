@@ -184,7 +184,7 @@ final userSettingsProvider = StateNotifierProvider<UserSettingsNotifier, UserSet
 
 class UserSettingsNotifier extends StateNotifier<UserSettings> {
   final TransactionRepository _repository;
-  UserSettingsNotifier(this._repository) : super(UserSettings()) {
+  UserSettingsNotifier(this._repository) : super(UserSettings(profile: UserProfile())) {
     loadSettings();
   }
 
@@ -196,11 +196,44 @@ class UserSettingsNotifier extends StateNotifier<UserSettings> {
     state = settings;
     await _repository.saveSettings(settings);
   }
+
+  Future<void> addGoal(FinancialGoal goal) async {
+    final newSettings = UserSettings(
+      minMonthlyBalanceBusiness: state.minMonthlyBalanceBusiness,
+      minMonthlyBalancePersonal: state.minMonthlyBalancePersonal,
+      defaultIsBusiness: state.defaultIsBusiness,
+      profile: state.profile,
+      goals: [...state.goals, goal],
+    );
+    await updateSettings(newSettings);
+  }
+
+  Future<void> updateGoal(FinancialGoal goal) async {
+    final newSettings = UserSettings(
+      minMonthlyBalanceBusiness: state.minMonthlyBalanceBusiness,
+      minMonthlyBalancePersonal: state.minMonthlyBalancePersonal,
+      defaultIsBusiness: state.defaultIsBusiness,
+      profile: state.profile,
+      goals: [for (final g in state.goals) if (g.id == goal.id) goal else g],
+    );
+    await updateSettings(newSettings);
+  }
+
+  Future<void> deleteGoal(String id) async {
+    final newSettings = UserSettings(
+      minMonthlyBalanceBusiness: state.minMonthlyBalanceBusiness,
+      minMonthlyBalancePersonal: state.minMonthlyBalancePersonal,
+      defaultIsBusiness: state.defaultIsBusiness,
+      profile: state.profile,
+      goals: state.goals.where((g) => g.id != id).toList(),
+    );
+    await updateSettings(newSettings);
+  }
 }
 
 // Computed providers
 final totalIncomeProvider = Provider<double>((ref) {
-  final transactions = ref.watch(transactionsProvider).valueOrNull ?? [];
+  final transactions = ref.watch(transactionsProvider).asData?.value ?? [];
   final filter = ref.watch(dashFilterProvider);
   return transactions
       .where((t) => (filter == null || t.isBusiness == filter))
@@ -209,7 +242,7 @@ final totalIncomeProvider = Provider<double>((ref) {
 });
 
 final totalExpenseProvider = Provider<double>((ref) {
-  final transactions = ref.watch(transactionsProvider).valueOrNull ?? [];
+  final transactions = ref.watch(transactionsProvider).asData?.value ?? [];
   final filter = ref.watch(dashFilterProvider);
   return transactions
       .where((t) => (filter == null || t.isBusiness == filter))
