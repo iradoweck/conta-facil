@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/providers/auth_provider.dart';
-import 'features/auth/presentation/screens/splash_screen.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/financeiro/presentation/screens/dashboard_screen.dart';
+import 'modules/auth/providers/auth_provider.dart';
+import 'modules/auth/presentation/screens/splash_screen.dart';
+import 'modules/auth/presentation/screens/login_screen.dart';
+import 'core/presentation/screens/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,9 +29,9 @@ class ContaFacilApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: mockLoggedIn 
-          ? const DashboardScreen() 
+          ? const MainScreen() 
           : authState.when(
-              data: (user) => user != null ? const DashboardScreen() : const LoginScreen(),
+              data: (user) => user != null ? const MainScreen() : const LoginScreen(),
               loading: () => const SplashScreen(),
               error: (e, s) => const LoginScreen(),
             ),
