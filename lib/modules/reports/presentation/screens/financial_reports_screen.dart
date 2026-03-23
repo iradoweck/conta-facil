@@ -250,15 +250,27 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            if (prefixColor != null) ...[
-               Container(width: 4, height: 16, decoration: BoxDecoration(color: prefixColor, borderRadius: BorderRadius.circular(2))),
-               const SizedBox(width: 8),
+        Expanded(
+          child: Row(
+            children: [
+              if (prefixColor != null) ...[
+                 Container(width: 4, height: 16, decoration: BoxDecoration(color: prefixColor, borderRadius: BorderRadius.circular(2))),
+                 const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Text(
+                  label, 
+                  style: TextStyle(
+                    fontWeight: isHeader ? FontWeight.bold : FontWeight.w500, 
+                    color: isHeader ? Colors.black87 : Colors.black54
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
-            Text(label, style: TextStyle(fontWeight: isHeader ? FontWeight.bold : FontWeight.w500, color: isHeader ? Colors.black87 : Colors.black54)),
-          ],
+          ),
         ),
+        const SizedBox(width: 8),
         Text(
           fmt.format(value),
           style: TextStyle(

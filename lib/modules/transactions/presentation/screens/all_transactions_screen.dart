@@ -104,27 +104,32 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         ),
         title: Text(t.title),
         subtitle: Text('${t.category} • ${DateFormat('dd/MM/yyyy').format(t.date)}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              fmt.format(t.amount),
-              style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? AppColors.success : AppColors.alert),
-            ),
-            PopupMenuButton(
-              onSelected: (val) {
-                if (val == 'edit') {
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddTransactionScreen(transactionToEdit: t)));
-                } else if (val == 'delete') {
-                  _showDeleteConfirm(context, ref, t.id);
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'edit', child: Text('Editar')),
-                const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
-              ],
-            ),
-          ],
+        trailing: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 150),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                fmt.format(t.amount),
+                style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? AppColors.success : AppColors.alert),
+              ),
+              PopupMenuButton(
+                icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
+                onSelected: (val) {
+                  if (val == 'edit') {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddTransactionScreen(transactionToEdit: t)));
+                  } else if (val == 'delete') {
+                    _showDeleteConfirm(context, ref, t.id);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('Editar')),
+                  const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

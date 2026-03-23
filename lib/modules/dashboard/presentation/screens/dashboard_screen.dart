@@ -308,6 +308,7 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                   PopupMenuButton(
+                    icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
                     onSelected: (val) {
                       if (val == 'edit') {
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddTransactionScreen(transactionToEdit: t)));
@@ -322,6 +323,9 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+              onTap: () {
+                // Future Detail view
+              },
             );
           },
         );

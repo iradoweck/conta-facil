@@ -50,7 +50,7 @@ class QuickActionGrid extends StatelessWidget {
             context,
             icon: Icons.auto_awesome,
             label: 'Ajuda IA',
-            color: const Color(0xFF8B5CF6), // Violet 500
+            color: const Color(0xFF00ADEE), // Cyan / Blue Sky (Zedeck's Palette)
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ChatScreen()),
             ),
