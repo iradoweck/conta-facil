@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'package:conta_facil/shared/components/fintech_card.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:conta_facil/core/providers/subscription_provider.dart';
 
 class ChatMessage {
   final String text;
@@ -11,14 +13,14 @@ class ChatMessage {
   ChatMessage({required this.text, required this.isUser}) : timestamp = DateTime.now();
 }
 
-class EdmilsonPortalScreen extends StatefulWidget {
+class EdmilsonPortalScreen extends ConsumerStatefulWidget {
   const EdmilsonPortalScreen({super.key});
 
   @override
-  State<EdmilsonPortalScreen> createState() => _EdmilsonPortalScreenState();
+  ConsumerState<EdmilsonPortalScreen> createState() => _EdmilsonPortalScreenState();
 }
 
-class _EdmilsonPortalScreenState extends State<EdmilsonPortalScreen> {
+class _EdmilsonPortalScreenState extends ConsumerState<EdmilsonPortalScreen> {
   final List<ChatMessage> _messages = [
     ChatMessage(
       text: "Olá, Parceiro! Sou o Edmilson, o teu mentor financeiro impulsionado por IA. Estou a monitorar as tuas contas. Como posso ajudar com o teu negócio hoje?",
@@ -46,6 +48,23 @@ class _EdmilsonPortalScreenState extends State<EdmilsonPortalScreen> {
     });
 
     _scrollToBottom();
+
+    final isPro = ref.read(subscriptionProvider) == SubscriptionPlan.pro;
+    final userMessagesCount = _messages.where((m) => m.isUser).length;
+
+    if (!isPro && userMessagesCount >= 3) {
+      await Future.delayed(const Duration(milliseconds: 1000));
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(
+            text: "Opa! Atingiste o limite de consultas gratuitas do Plano Free. Para continuar a receber insights profundos e ilimitados, torna-te um parceiro PRO! 🚀",
+            isUser: false,
+          ));
+        });
+        _scrollToBottom();
+      }
+      return;
+    }
 
     // Mock AI typing delay
     await Future.delayed(const Duration(milliseconds: 1200));

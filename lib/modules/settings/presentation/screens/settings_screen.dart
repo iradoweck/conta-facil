@@ -7,6 +7,7 @@ import 'package:conta_facil/modules/intelligence/portal/presentation/screens/edm
 import 'package:conta_facil/modules/settings/presentation/screens/personal_details_screen.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+import 'package:conta_facil/core/providers/subscription_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -32,6 +33,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final accounts = ref.watch(accountsProvider);
     final categories = ref.watch(categoriesProvider);
     final fixedExpenses = ref.watch(fixedExpensesProvider);
+    final isPro = ref.watch(subscriptionProvider) == SubscriptionPlan.pro;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -49,7 +51,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(height: 32),
                   
                   _buildSectionTitle('💰 Gestão Financeira'),
-                  _buildFinanceModule(settings, accounts, categories, fixedExpenses),
+                  _buildFinanceModule(settings, accounts, categories, fixedExpenses, isPro),
                   const SizedBox(height: 32),
 
                   _buildSectionTitle('🎯 Metas e Reservas'),
@@ -218,6 +220,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     List<FinanceAccount> accounts,
     List<CategoryItem> categories,
     List<FixedExpense> fixedExpenses,
+    bool isPro,
   ) {
     return Column(
       children: [
@@ -225,7 +228,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           title: 'Gestão de Contas',
           subtitle: '${accounts.length} contas configuradas',
           icon: Icons.account_balance_outlined,
-          child: _buildAccountList(accounts),
+          child: _buildAccountList(accounts, isPro),
         ),
         const SizedBox(height: 12),
         _buildModuleExpansion(
@@ -382,7 +385,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildAccountList(List<FinanceAccount> accounts) {
+  Widget _buildAccountList(List<FinanceAccount> accounts, bool isPro) {
     return Column(
       children: [
         ListView.builder(
@@ -404,7 +407,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           },
         ),
         const SizedBox(height: 8),
-        if (accounts.length < 2) 
+        if (accounts.length < 2 || isPro) 
           TextButton.icon(
             onPressed: () => _showAccountDialog(),
             icon: const Icon(Icons.add),
@@ -416,7 +419,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ElevatedButton.icon(
               onPressed: () {
-                // Show Pro Upgrade UI
+                _showUpgradeProDialog();
               },
               icon: const Icon(Icons.workspace_premium, color: Colors.amber),
               label: const Text('Adicionar Ilímitadas (PRO)', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -664,6 +667,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  void _showUpgradeProDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Column(
+          children: [
+            Icon(Icons.workspace_premium, color: Colors.amber, size: 50),
+            SizedBox(height: 16),
+            Text('Conta Fácil PRO', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Desbloqueie todo o poder da sua gestão financeira!',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            SizedBox(height: 24),
+            _ProFeatureItem(icon: Icons.account_balance, text: 'Contas & Bancos Ilimitados'),
+            _ProFeatureItem(icon: Icons.analytics, text: 'Relatórios DRE Profissionais'),
+            _ProFeatureItem(icon: Icons.auto_awesome, text: 'Insights da IA Ilimitados'),
+            _ProFeatureItem(icon: Icons.cloud_upload, text: 'Backup em Nuvem e Sync'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Mais Tarde', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(subscriptionProvider.notifier).upgradeToPro();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('🎉 Parabéns! Você agora é PRO!'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Upgrade Agora (Simulado)'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showFixedExpenseDialog() {
     final titleController = TextEditingController();
     final amountController = TextEditingController();
@@ -698,6 +756,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             },
             child: const Text('Adicionar'),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProFeatureItem extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _ProFeatureItem({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primary, size: 18),
+          const SizedBox(width: 12),
+          Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
         ],
       ),
     );

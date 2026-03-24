@@ -6,6 +6,7 @@ import 'package:conta_facil/modules/transactions/providers/transaction_provider.
 import 'package:conta_facil/shared/components/fintech_card.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:conta_facil/core/providers/subscription_provider.dart';
 
 class FinancialReportsScreen extends ConsumerStatefulWidget {
   const FinancialReportsScreen({super.key});
@@ -196,6 +197,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
     final expense = transactions.where((t) => t.type == TransactionType.expense).fold(0.0, (sum, t) => sum + t.amount);
     final net = income - expense;
     final margin = income > 0 ? (net / income) * 100 : 0.0;
+    final isPro = ref.watch(subscriptionProvider) == SubscriptionPlan.pro;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -241,7 +243,10 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
         const SizedBox(height: 24),
         const Text('  Análise de Custos por Categoria', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 12),
-        ..._buildCategoryBreakdown(transactions, fmt),
+        if (isPro)
+          ..._buildCategoryBreakdown(transactions, fmt)
+        else
+          _buildProRestrictionCard('Análise de Categorias detalhada'),
       ],
     );
   }
@@ -405,5 +410,43 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
 
   Widget _buildEmptyState() {
     return const Center(child: Text('Nenhuma transação no período selecionado.', style: TextStyle(color: Colors.grey)));
+  }
+
+  Widget _buildProRestrictionCard(String featureName) {
+    return FintechCard(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const Icon(Icons.lock_outline, color: Colors.grey, size: 40),
+          const SizedBox(height: 16),
+          Text(
+            featureName,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Esta funcionalidade está disponível apenas para membros PRO.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Vá para Perfil > Configurações para fazer o Upgrade!')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Saiba Mais'),
+          ),
+        ],
+      ),
+    );
   }
 }

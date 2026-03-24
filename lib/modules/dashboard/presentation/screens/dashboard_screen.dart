@@ -20,6 +20,7 @@ import 'package:conta_facil/modules/reports/presentation/screens/financial_repor
 import 'package:conta_facil/modules/reports/presentation/screens/analytics_screen.dart';
 import 'package:conta_facil/modules/transactions/presentation/screens/all_transactions_screen.dart';
 import 'package:conta_facil/modules/settings/presentation/screens/settings_screen.dart';
+import 'package:conta_facil/core/providers/subscription_provider.dart';
 import 'package:conta_facil/modules/settings/presentation/screens/general_settings_screen.dart';
 import 'package:conta_facil/modules/intelligence/education/presentation/screens/education_hub_screen.dart';
 import 'package:conta_facil/modules/intelligence/education/domain/models/education_item.dart';
@@ -34,14 +35,37 @@ class DashboardScreen extends ConsumerWidget {
     final totalIncome = ref.watch(totalIncomeProvider);
     final totalExpense = ref.watch(totalExpenseProvider);
     final balance = ref.watch(balanceProvider);
+    final isPro = ref.watch(subscriptionProvider) == SubscriptionPlan.pro;
     
     final currencyFormat = NumberFormat.currency(locale: 'pt_MZ', symbol: 'MT');
 
     return Scaffold(
       appBar: AppBar(
-        title: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 160),
-          child: Image.asset('assets/images/logo.png', height: 32, fit: BoxFit.contain),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
+              child: Image.asset('assets/images/logo.png', height: 32, fit: BoxFit.contain),
+            ),
+            if (isPro) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFFF59E0B).withAlpha((0.3 * 255).toInt()), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: const Text(
+                  'PRO', 
+                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                ),
+              ),
+            ],
+          ],
         ),
         actions: [
           IconButton(
