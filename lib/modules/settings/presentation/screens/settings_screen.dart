@@ -8,6 +8,9 @@ import 'package:conta_facil/modules/settings/presentation/screens/personal_detai
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:conta_facil/core/providers/subscription_provider.dart';
+import 'package:conta_facil/modules/intelligence/chat/presentation/screens/chat_screen.dart';
+import 'package:conta_facil/shared/utils/pro_gate_helper.dart';
+import 'package:conta_facil/shared/utils/icon_picker_dialog.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -72,14 +75,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildSliverHeader(UserProfile profile) {
     return SliverAppBar(
-      expandedHeight: 240,
+      expandedHeight: 280,
       pinned: true,
       stretch: true,
       backgroundColor: AppColors.primary,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
-        title: Text(
-          profile.surname.isNotEmpty ? profile.surname : profile.name,
+        title: const Text(
+          'Meu Perfil',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -116,7 +119,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 60),
                   Hero(
                     tag: 'profile-avatar',
                     child: Container(
@@ -214,10 +217,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _buildSettingsTile(
             icon: Icons.auto_awesome_outlined,
             title: 'Portal do Edmilson',
-            subtitle: 'Seu assistente financeiro pessoal',
+            subtitle: 'Seu parceiro financeiro digital',
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const EdmilsonPortalScreen()),
+              MaterialPageRoute(builder: (_) => const ChatScreen()),
             ),
           ),
         ],
@@ -549,6 +552,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // --- Dialogs ---
 
   void _showGoalDialog() {
+    final isPro = ref.read(subscriptionProvider) == SubscriptionPlan.pro;
+    final goalsCount = ref.read(userSettingsProvider).goals.length;
+    
+    if (!isPro && goalsCount >= 3) {
+      ProGateHelper.showUpgradeDialog(context, 'Mais de 3 Metas Financeiras');
+      return;
+    }
+
     bool isBusiness = true;
     showDialog(
       context: context,
@@ -606,30 +617,86 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showCategoryDialog({required bool isIncome}) {
+    final isPro = ref.read(subscriptionProvider) == SubscriptionPlan.pro;
+    final currentCategoriesCount = ref.read(categoriesProvider).where((c) => c.isIncome == isIncome).length;
+    
+    if (!isPro && currentCategoriesCount >= 5) {
+      ProGateHelper.showUpgradeDialog(context, 'Mais de 5 Categorias (Personalizadas)');
+      return;
+    }
+
     final nameController = TextEditingController();
+    IconData selectedIcon = isIncome ? Icons.add_circle : Icons.remove_circle;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isIncome ? 'Nova Categoria de Entrada' : 'Nova Categoria de Saída'),
-        content: TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nome da Categoria')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.isNotEmpty) {
-                final cat = CategoryItem(
-                  id: const Uuid().v4(),
-                  name: nameController.text,
-                  isIncome: isIncome,
-                  icon: isIncome ? Icons.add_circle : Icons.remove_circle,
-                );
-                ref.read(categoriesProvider.notifier).addCategory(cat);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Criar'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(isIncome ? 'Nova Categoria de Entrada' : 'Nova Categoria de Saída'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nome da Categoria')),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text('Ícone: '),
+                  const Spacer(),
+                  InkWell(
+                    onTap: () async {
+                      if (!isPro) {
+                        ProGateHelper.showUpgradeDialog(context, 'Ícones Personalizados');
+                        return;
+                      }
+                      final IconData? pickedIcon = await showDialog<IconData>(
+                        context: context,
+                        builder: (_) => const IconPickerDialog(),
+                      );
+                      if (pickedIcon != null) {
+                        setDialogState(() => selectedIcon = pickedIcon);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(selectedIcon, color: AppColors.primary),
+                          if (!isPro) ...[
+                            const SizedBox(width: 8),
+                            const Icon(Icons.workspace_premium, size: 14, color: Colors.amber),
+                          ]
+                        ]
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.isNotEmpty) {
+                  final cat = CategoryItem(
+                    id: const Uuid().v4(),
+                    name: nameController.text,
+                    isIncome: isIncome,
+                    icon: selectedIcon,
+                  );
+                  ref.read(categoriesProvider.notifier).addCategory(cat);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Criar'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -733,6 +800,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showFixedExpenseDialog() {
+    final isPro = ref.read(subscriptionProvider) == SubscriptionPlan.pro;
+    final expensesCount = ref.read(fixedExpensesProvider).length;
+    
+    if (!isPro && expensesCount >= 5) {
+      ProGateHelper.showUpgradeDialog(context, 'Mais de 5 Despesas Fixas');
+      return;
+    }
+
     final titleController = TextEditingController();
     final amountController = TextEditingController();
     final dayController = TextEditingController();

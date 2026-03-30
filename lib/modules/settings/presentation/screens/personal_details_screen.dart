@@ -7,6 +7,7 @@ import 'package:conta_facil/modules/settings/domain/models/settings_models.dart'
 import 'package:conta_facil/modules/transactions/providers/transaction_provider.dart';
 import 'package:conta_facil/modules/auth/providers/auth_provider.dart';
 import 'package:conta_facil/core/providers/subscription_provider.dart';
+import 'package:conta_facil/shared/utils/pro_gate_helper.dart';
 
 class PersonalDetailsScreen extends ConsumerStatefulWidget {
   const PersonalDetailsScreen({super.key});
@@ -79,14 +80,17 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
 
       // 1. Validate Format (GIF only for Pro)
       final extension = image.path.split('.').last.toLowerCase();
-      if (extension == 'gif' && !isPro) {
+      final allowedExtensions = isPro ? ['jpg', 'jpeg', 'png', 'gif'] : ['jpg', 'jpeg', 'png'];
+      
+      if (!allowedExtensions.contains(extension)) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('GIFs de perfil são exclusivos para utilizadores PRO! 💎'),
-              backgroundColor: AppColors.primary,
-            ),
-          );
+          if (extension == 'gif' && !isPro) {
+            ProGateHelper.showUpgradeDialog(context, 'Animação de Perfil (GIF)');
+          } else {
+             ScaffoldMessenger.of(context).showSnackBar(
+               const SnackBar(content: Text('Formato não suportado. Use JPG ou PNG.'), backgroundColor: AppColors.alert),
+             );
+          }
         }
         return;
       }
@@ -259,6 +263,55 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
     );
   }
 
+  void _showDeleteAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Column(
+          children: [
+            Icon(Icons.warning_rounded, color: AppColors.alert, size: 48),
+            SizedBox(height: 16),
+            Text('Sentiremos a tua falta! 😢', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Tens a certeza que desejas eliminar a tua conta do Conta Fácil?\n\n'
+          'Os teus dados serão congelados por 3 dias em caso de arrependimento. '
+          'Após esse período, serão eliminados permanentemente.',
+          textAlign: TextAlign.center,
+          style: TextStyle(height: 1.4),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Conta suspensa por 3 dias para eliminação.'),
+                    backgroundColor: AppColors.alert,
+                  ),
+                );
+              }
+              ref.read(authControllerProvider.notifier).logout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.alert,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sim, Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(userSettingsProvider).profile;
@@ -368,11 +421,24 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
               child: const Text('Guardar Alterações', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _showDeleteAccountDialog,
+              icon: const Icon(Icons.delete_forever),
+              label: const Text('Eliminar Minha Conta', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.alert.withValues(alpha: 0.1),
+                foregroundColor: AppColors.alert,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 16),
             OutlinedButton(
               onPressed: () => ref.read(authControllerProvider.notifier).logout(),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.alert,
-                side: const BorderSide(color: AppColors.alert),
+                foregroundColor: Colors.grey[700],
+                side: BorderSide(color: Colors.grey[400]!),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
