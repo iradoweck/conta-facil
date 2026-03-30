@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:conta_facil/core/constants/app_colors.dart';
@@ -142,15 +143,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           )
                         ],
                       ),
-                      child: Center(
-                        child: Text(
-                          profile.name[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      child: ClipOval(
+                        child: profile.photoPath != null
+                          ? Image(
+                              image: profile.photoPath!.startsWith('http') || profile.photoPath!.startsWith('blob:')
+                                  ? NetworkImage(profile.photoPath!)
+                                  : FileImage(File(profile.photoPath!)) as ImageProvider,
+                              fit: BoxFit.cover,
+                              width: 90,
+                              height: 90,
+                            )
+                          : Center(
+                              child: Text(
+                                profile.name[0].toUpperCase(),
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                       ),
                     ),
                   ),

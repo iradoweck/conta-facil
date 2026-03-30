@@ -96,8 +96,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
       }
 
       // 2. Validate Size (Max 2MB)
-      final file = File(image.path);
-      final sizeInBytes = await file.length();
+      final sizeInBytes = await image.length();
       final sizeInMb = sizeInBytes / (1024 * 1024);
 
       if (sizeInMb > 2.0) {
@@ -335,7 +334,7 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
                       radius: 60,
                       backgroundColor: Colors.grey[200],
                       backgroundImage: profile.photoPath != null 
-                        ? (profile.photoPath!.startsWith('http') 
+                        ? (profile.photoPath!.startsWith('http') || profile.photoPath!.startsWith('blob:')
                             ? NetworkImage(profile.photoPath!) 
                             : FileImage(File(profile.photoPath!)) as ImageProvider)
                         : null,
