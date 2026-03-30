@@ -4,6 +4,24 @@ Este documento regista a evolução do projeto **Conta Fácil**, desde o protót
 
 ---
 
+## 🔝 v1.3.0 (Escalabilidade & Refinamento UI) - 30/03/2026
+
+### 📊 Dashboard & Navegação
+- **Transações Minimalistas**: Remoção do botão "Ver Tudo" e foco exclusivo nas últimas 5 transações.
+- **Ecossistema de Sabedoria**: Navegação directa para ecrãs (TI & Dev, Gestão, Guia Fiscal).
+- **Contexto Educativo**: Mapeamento de cards para placeholders funcionais.
+
+### 📈 Analytics & Insights
+- **Experiência Unificada**: Incorporação do Rodapé no ecrã "Estudo das minhas Finanças".
+- **Insights Dinâmicos**: Refinamento do `InsightEngine` com mensagens reais e motivacionais (Dicas ISPC).
+- **Estudo Financeiro**: Padronização do título para "Estudo das minhas Finanças".
+
+### 🧹 Manutenção
+- **Workspace Clean**: Limpeza de logs de construção e arquivos de análise.
+- **Dev Mode Support**: Suporte para symlinks e Developer Mode no Windows.
+
+---
+
 ## 🚀 Versão Atual: v1.2.0 (Estabilização & Identidade) - 19/03/2026
 
 ### 🎨 Identidade Visual (Phase 21)

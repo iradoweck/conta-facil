@@ -25,6 +25,7 @@ import 'package:conta_facil/modules/settings/presentation/screens/general_settin
 import 'package:conta_facil/modules/intelligence/education/presentation/screens/education_hub_screen.dart';
 import 'package:conta_facil/modules/intelligence/education/domain/models/education_item.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:conta_facil/modules/intelligence/education/presentation/screens/education_screens.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -83,9 +84,7 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               const QuickActionGrid(),
               const SizedBox(height: 24),
-              _buildSectionHeader(context, 'Transações Recentes', onVerTudo: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AllTransactionsScreen()));
-              }),
+              _buildSectionHeader(context, 'Transações Recentes'),
               _buildRecentTransactions(context, transactionsAsync, currencyFormat, ref),
               const SizedBox(height: 24),
               _buildSectionHeader(context, 'Sabedoria do Edmilson & IA'),
@@ -326,7 +325,23 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildEducationItem(BuildContext context, EducationItem item) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EducationHubScreen())),
+      onTap: () {
+        Widget destination;
+        switch (item.title) {
+          case 'Edmilson: Dev Web Real':
+            destination = const TiDevScreen();
+            break;
+          case 'Mentoria: Gestão de Parceiro':
+            destination = const ManagementScreen();
+            break;
+          case 'Guia Fiscal: Papo Direto':
+            destination = const FiscalGuideScreen();
+            break;
+          default:
+            destination = const EducationHubScreen();
+        }
+        Navigator.of(context).push(MaterialPageRoute(builder: (_) => destination));
+      },
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(16),

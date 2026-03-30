@@ -10,6 +10,12 @@ import 'package:conta_facil/modules/reports/domain/services/report_service.dart'
 import 'package:conta_facil/modules/reports/domain/engines/insight_engine.dart';
 import 'package:conta_facil/shared/models/finance_account.dart';
 import 'package:conta_facil/modules/settings/domain/models/settings_models.dart';
+import 'package:conta_facil/modules/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:conta_facil/modules/transactions/presentation/screens/all_transactions_screen.dart';
+import 'package:conta_facil/modules/reports/presentation/screens/financial_reports_screen.dart';
+import 'package:conta_facil/modules/intelligence/portal/presentation/screens/edmilson_portal_screen.dart';
+import 'package:conta_facil/modules/settings/presentation/screens/settings_screen.dart';
+import 'package:conta_facil/core/presentation/screens/main_screen.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
@@ -103,6 +109,45 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: 2, // Relatórios
+          onTap: (index) {
+            if (index != 2) {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const MainScreen()),
+                (route) => false,
+              );
+            }
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: Colors.grey.shade400,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Dashboard'),
+            BottomNavigationBarItem(icon: Icon(Icons.swap_horiz_outlined), label: 'Transações'),
+            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Relatórios'),
+            BottomNavigationBarItem(icon: Icon(Icons.psychology_outlined), label: 'IA / Portal'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
+          ],
+        ),
       ),
     );
   }

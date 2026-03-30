@@ -100,8 +100,9 @@ class _HeroBalanceCardState extends State<HeroBalanceCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildMiniBalance('Receitas', _formatValue(widget.income), AppColors.success),
-              _buildMiniBalance('Despesas', _formatValue(widget.expense), AppColors.alert),
+              Expanded(child: _buildMiniBalance('Receitas', widget.income, AppColors.success)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildMiniBalance('Despesas', widget.expense, AppColors.alert)),
             ],
           ),
         ],
@@ -109,13 +110,14 @@ class _HeroBalanceCardState extends State<HeroBalanceCard> {
     );
   }
 
-  Widget _buildMiniBalance(String label, String value, Color color) {
+  Widget _buildMiniBalance(String label, double value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 4),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(4),
@@ -130,12 +132,18 @@ class _HeroBalanceCardState extends State<HeroBalanceCard> {
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white, 
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _formatValue(value),
+                  style: const TextStyle(
+                    color: Colors.white, 
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
               ),
             ),
           ],

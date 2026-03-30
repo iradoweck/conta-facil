@@ -1,0 +1,62 @@
+Analyzing conta-facil...                                        
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\presentation\screens\main_screen.dart:42:35 - deprecated_member_use
+  error - The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'.  - lib\core\theme\app_theme.dart:48:18 - argument_type_not_assignable
+warning - Unused import: 'package:flutter/foundation.dart' - lib\modules\auth\data\mock_auth_service.dart:2:8 - unused_import
+warning - The value of the field '_currentUser' isn't used - lib\modules\auth\data\mock_auth_service.dart:7:11 - unused_field
+warning - Unused import: 'login_screen.dart' - lib\modules\auth\presentation\screens\splash_screen.dart:4:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/auth/providers/auth_provider.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:6:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/tools/fiscal/presentation/screens/tax_simulator_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:13:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/intelligence/chat/presentation/screens/chat_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:14:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/intelligence/portal/presentation/screens/edmilson_portal_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:15:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/settings/presentation/screens/user_account_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:16:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/tools/budget/presentation/screens/budget_simulator_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:17:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/tools/fiscal/presentation/screens/fiscal_guide_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:18:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/reports/presentation/screens/financial_reports_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:19:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/reports/presentation/screens/analytics_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:20:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/settings/presentation/screens/settings_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:22:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/settings/presentation/screens/general_settings_screen.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:24:8 - unused_import
+warning - Unused import: 'package:fl_chart/fl_chart.dart' - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:27:8 - unused_import
+warning - The value of the local variable 'isPro' isn't used - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:38:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:143:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:145:51 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:172:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:172:70 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:175:53 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:214:14 - unnecessary_to_list_in_spreads
+warning - The declaration '_buildLegendItem' isn't referenced - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:220:10 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:268:83 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:334:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:336:48 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:403:47 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:405:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\dashboard\presentation\screens\dashboard_screen.dart:434:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\intelligence\chat\presentation\screens\chat_screen.dart:134:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\intelligence\chat\presentation\screens\chat_screen.dart:135:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\intelligence\chat\presentation\screens\chat_screen.dart:148:26 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\intelligence\chat\presentation\screens\chat_screen.dart:179:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\intelligence\chat\presentation\screens\chat_screen.dart:212:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\intelligence\education\presentation\screens\education_hub_screen.dart:32:39 - deprecated_member_use
+warning - Unused import: 'package:conta_facil/modules/settings/domain/models/settings_models.dart' - lib\modules\reports\domain\services\report_service.dart:3:8 - unused_import
+warning - Unused import: 'package:conta_facil/modules/transactions/domain/models/transaction.dart' - lib\modules\reports\presentation\screens\analytics_screen.dart:4:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\reports\presentation\screens\analytics_screen.dart:115:51 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\modules\reports\presentation\screens\analytics_screen.dart:122:15 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\modules\reports\presentation\screens\analytics_screen.dart:135:15 - deprecated_member_use
+   info - Unnecessary use of 'toList' in a spread - lib\modules\reports\presentation\screens\analytics_screen.dart:211:12 - unnecessary_to_list_in_spreads
+   info - Unnecessary use of 'toList' in a spread - lib\modules\reports\presentation\screens\analytics_screen.dart:249:16 - unnecessary_to_list_in_spreads
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\reports\presentation\screens\sales_report_screen.dart:78:32 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\modules\settings\presentation\screens\personal_details_screen.dart:416:7 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\modules\settings\presentation\screens\settings_screen.dart:496:13 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\modules\settings\presentation\screens\settings_screen.dart:505:13 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\modules\settings\presentation\screens\settings_screen.dart:577:17 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\tools\fiscal\presentation\screens\fiscal_guide_screen.dart:94:34 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\tools\fiscal\presentation\screens\fiscal_guide_screen.dart:96:53 - deprecated_member_use
+warning - Unused import: 'package:flutter/material.dart' - lib\modules\transactions\data\repositories\transaction_repository.dart:2:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\transactions\presentation\screens\add_transaction_screen.dart:176:28 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\transactions\presentation\screens\add_transaction_screen.dart:234:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\transactions\presentation\screens\add_transaction_screen.dart:247:44 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\modules\transactions\presentation\screens\add_transaction_screen.dart:305:7 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\modules\transactions\presentation\screens\add_transaction_screen.dart:338:7 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\modules\transactions\presentation\screens\all_transactions_screen.dart:102:77 - deprecated_member_use
+warning - Unused import: 'package:conta_facil/core/constants/app_colors.dart' - lib\shared\components\fintech_card.dart:2:8 - unused_import
+
