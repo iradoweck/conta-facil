@@ -66,7 +66,7 @@ class FixedExpense {
 
 class UserProfile {
   final String name;
-  final String nickname;
+  final String surname;
   final String email;
   final String password;
   final String city;
@@ -78,20 +78,20 @@ class UserProfile {
 
   UserProfile({
     this.name = 'Utilizador',
-    this.nickname = '',
+    this.surname = '',
     this.email = '',
     this.password = '',
     this.city = '',
     this.country = 'Moçambique',
     this.province = 'Maputo Cidade',
     this.phone = '',
-    this.bio = 'O meu parceiro de crescimento',
+    String bio = 'O meu parceiro de crescimento',
     this.photoPath,
-  });
+  }) : bio = bio.length > 120 ? bio.substring(0, 120) : bio;
 
   Map<String, dynamic> toJson() => {
     'name': name,
-    'nickname': nickname,
+    'surname': surname,
     'email': email,
     'password': password,
     'city': city,
@@ -103,16 +103,17 @@ class UserProfile {
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final rawBio = json['bio'] ?? 'O meu parceiro de crescimento';
     return UserProfile(
       name: json['name'] ?? 'Utilizador',
-      nickname: json['nickname'] ?? '',
+      surname: json['surname'] ?? json['nickname'] ?? '',
       email: json['email'] ?? '',
       password: json['password'] ?? '',
       city: json['city'] ?? '',
       country: json['country'] ?? 'Moçambique',
       province: json['province'] ?? 'Maputo Cidade',
       phone: json['phone'] ?? '',
-      bio: json['bio'] ?? 'O meu parceiro de crescimento',
+      bio: rawBio.length > 120 ? rawBio.substring(0, 120) : rawBio,
       photoPath: json['photoPath'],
     );
   }

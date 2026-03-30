@@ -40,55 +40,7 @@ class DashboardScreen extends ConsumerWidget {
     final currencyFormat = NumberFormat.currency(locale: 'pt_MZ', symbol: 'MT');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 160),
-              child: Image.asset('assets/images/logo.png', height: 32, fit: BoxFit.contain),
-            ),
-            if (isPro) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: const Color(0xFFF59E0B).withAlpha((0.3 * 255).toInt()), blurRadius: 8, offset: const Offset(0, 2)),
-                  ],
-                ),
-                child: const Text(
-                  'PRO', 
-                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0),
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Meu Perfil',
-            icon: const Icon(Icons.person_outline),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Focado em Mim: Edmilson Muacigarro',
-            icon: const Icon(Icons.psychology_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const EdmilsonPortalScreen()),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Sair',
-            icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-          ),
-        ],
-      ),
+      appBar: null,
       body: RefreshIndicator(
         onRefresh: () async => ref.read(transactionsProvider.notifier).loadTransactions(),
         child: SingleChildScrollView(

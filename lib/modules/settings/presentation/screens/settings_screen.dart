@@ -79,7 +79,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
         title: Text(
-          profile.nickname.isNotEmpty ? profile.nickname : profile.name,
+          profile.surname.isNotEmpty ? profile.surname : profile.name,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -107,7 +107,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 width: 200,
                 height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white.withValues(alpha: 0.05),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -127,7 +127,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 20,
                             spreadRadius: 5,
                           )
@@ -146,6 +146,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  Text(
+                    '${profile.name} ${profile.surname}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
@@ -292,7 +302,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: (goal.isBusiness ? AppColors.primary : AppColors.accent).withOpacity(0.1),
+                      color: (goal.isBusiness ? AppColors.primary : AppColors.accent).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -348,7 +358,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: AppColors.primary, size: 20),
@@ -373,7 +383,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.05),
+          color: AppColors.primary.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Icon(icon, color: AppColors.primary, size: 24),
