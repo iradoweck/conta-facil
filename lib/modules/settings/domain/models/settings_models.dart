@@ -163,6 +163,8 @@ class UserSettings {
   final bool defaultIsBusiness;
   final UserProfile profile;
   final List<FinancialGoal> goals;
+  final ThemeMode themeMode;
+  final String currency;
 
   UserSettings({
     this.minMonthlyBalanceBusiness = 0.0,
@@ -170,6 +172,8 @@ class UserSettings {
     this.defaultIsBusiness = true,
     UserProfile? profile,
     this.goals = const [],
+    this.themeMode = ThemeMode.system,
+    this.currency = 'MZN',
   }) : profile = profile ?? UserProfile();
 
   Map<String, dynamic> toJson() => {
@@ -178,7 +182,29 @@ class UserSettings {
     'defaultIsBusiness': defaultIsBusiness,
     'profile': profile.toJson(),
     'goals': goals.map((g) => g.toJson()).toList(),
+    'themeMode': themeMode.index,
+    'currency': currency,
   };
+
+  UserSettings copyWith({
+    double? minMonthlyBalanceBusiness,
+    double? minMonthlyBalancePersonal,
+    bool? defaultIsBusiness,
+    UserProfile? profile,
+    List<FinancialGoal>? goals,
+    ThemeMode? themeMode,
+    String? currency,
+  }) {
+    return UserSettings(
+      minMonthlyBalanceBusiness: minMonthlyBalanceBusiness ?? this.minMonthlyBalanceBusiness,
+      minMonthlyBalancePersonal: minMonthlyBalancePersonal ?? this.minMonthlyBalancePersonal,
+      defaultIsBusiness: defaultIsBusiness ?? this.defaultIsBusiness,
+      profile: profile ?? this.profile,
+      goals: goals ?? this.goals,
+      themeMode: themeMode ?? this.themeMode,
+      currency: currency ?? this.currency,
+    );
+  }
 
   factory UserSettings.fromJson(Map<String, dynamic> json) {
     return UserSettings(
@@ -189,6 +215,8 @@ class UserSettings {
       goals: json['goals'] != null 
         ? (json['goals'] as List).map((g) => FinancialGoal.fromJson(g)).toList()
         : [],
+      themeMode: json['themeMode'] != null ? ThemeMode.values[json['themeMode']] : ThemeMode.system,
+      currency: json['currency'] ?? 'MZN',
     );
   }
 }

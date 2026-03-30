@@ -197,37 +197,28 @@ class UserSettingsNotifier extends StateNotifier<UserSettings> {
     await _repository.saveSettings(settings);
   }
 
+  Future<void> updateThemeMode(ThemeMode mode) async {
+    await updateSettings(state.copyWith(themeMode: mode));
+  }
+
+  Future<void> updateCurrency(String currency) async {
+    await updateSettings(state.copyWith(currency: currency));
+  }
+
   Future<void> addGoal(FinancialGoal goal) async {
-    final newSettings = UserSettings(
-      minMonthlyBalanceBusiness: state.minMonthlyBalanceBusiness,
-      minMonthlyBalancePersonal: state.minMonthlyBalancePersonal,
-      defaultIsBusiness: state.defaultIsBusiness,
-      profile: state.profile,
-      goals: [...state.goals, goal],
-    );
-    await updateSettings(newSettings);
+    await updateSettings(state.copyWith(goals: [...state.goals, goal]));
   }
 
   Future<void> updateGoal(FinancialGoal goal) async {
-    final newSettings = UserSettings(
-      minMonthlyBalanceBusiness: state.minMonthlyBalanceBusiness,
-      minMonthlyBalancePersonal: state.minMonthlyBalancePersonal,
-      defaultIsBusiness: state.defaultIsBusiness,
-      profile: state.profile,
+    await updateSettings(state.copyWith(
       goals: [for (final g in state.goals) if (g.id == goal.id) goal else g],
-    );
-    await updateSettings(newSettings);
+    ));
   }
 
   Future<void> deleteGoal(String id) async {
-    final newSettings = UserSettings(
-      minMonthlyBalanceBusiness: state.minMonthlyBalanceBusiness,
-      minMonthlyBalancePersonal: state.minMonthlyBalancePersonal,
-      defaultIsBusiness: state.defaultIsBusiness,
-      profile: state.profile,
+    await updateSettings(state.copyWith(
       goals: state.goals.where((g) => g.id != id).toList(),
-    );
-    await updateSettings(newSettings);
+    ));
   }
 }
 

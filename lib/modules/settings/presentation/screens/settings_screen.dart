@@ -12,6 +12,7 @@ import 'package:conta_facil/core/providers/subscription_provider.dart';
 import 'package:conta_facil/modules/intelligence/chat/presentation/screens/chat_screen.dart';
 import 'package:conta_facil/shared/utils/pro_gate_helper.dart';
 import 'package:conta_facil/shared/utils/icon_picker_dialog.dart';
+import 'package:conta_facil/core/services/notification_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -63,7 +64,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(height: 32),
 
                   _buildSectionTitle('⚙️ Preferências do App'),
-                  _buildPreferencesModule(),
+                  _buildPreferencesModule(settings, isPro),
                   const SizedBox(height: 100),
                 ],
               ),
@@ -501,40 +502,113 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildPreferencesModule() {
+  Widget _buildPreferencesModule(UserSettings settings, bool isPro) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: Colors.grey[200]!),
+        side: BorderSide(
+          color: Colors.grey[200]!.withValues(
+            alpha: Theme.of(context).brightness == Brightness.dark ? 0.1 : 1.0,
+          ),
+        ),
       ),
       child: Column(
         children: [
           SwitchListTile(
-            title: const Text('Modo Noturno (Dark/Light)', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-            subtitle: const Text('Muda o design do app', style: TextStyle(fontSize: 11)),
-            secondary: const Icon(Icons.dark_mode_outlined, color: AppColors.primary),
-            value: false, // Dummy
-            onChanged: (val) {},
-            activeColor: AppColors.primary,
-          ),
-          Divider(height: 1, indent: 56, color: Colors.grey[100]),
-          SwitchListTile(
-            title: const Text('Moeda Padrão', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-            subtitle: const Text('Exibir MZN em todos os relatórios', style: TextStyle(fontSize: 11)),
-            secondary: const Icon(Icons.monetization_on_outlined, color: AppColors.primary),
-            value: true, // Dummy
-            onChanged: (val) {},
+            title: const Text('Modo Noturno', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            subtitle: Text(
+              settings.themeMode == ThemeMode.dark ? 'Ativado' : 'Desativado',
+              style: const TextStyle(fontSize: 11),
+            ),
+            secondary: Icon(
+              settings.themeMode == ThemeMode.dark ? Icons.dark_mode : Icons.dark_mode_outlined,
+              color: AppColors.primary,
+            ),
+            value: settings.themeMode == ThemeMode.dark,
+            onChanged: (val) {
+              ref.read(userSettingsProvider.notifier).updateThemeMode(
+                val ? ThemeMode.dark : ThemeMode.light,
+              );
+            },
             activeColor: AppColors.primary,
           ),
           Divider(height: 1, indent: 56, color: Colors.grey[100]),
           _buildSettingsTile(
+            icon: Icons.monetization_on_outlined,
+            title: 'Moeda Padrão',
+            subtitle: 'Atual: ${settings.currency}',
+            onTap: () => _showCurrencyDialog(settings.currency, isPro),
+          ),
+          Divider(height: 1, indent: 56, color: Colors.grey[100]),
+          _buildSettingsTile(
             icon: Icons.notifications_active_outlined,
-            title: 'Notificações',
-            subtitle: 'Alertas de tributos e vencimentos',
-            onTap: () {},
+            title: 'Notificações Push',
+            subtitle: 'Receber alertas reais no telemóvel',
+            onTap: () async {
+              final success = await NotificationService.requestPermissions();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? 'Notificações Ativadas!' : 'Permissão Recusada/Erro'),
+                    backgroundColor: success ? AppColors.success : AppColors.alert,
+                  ),
+                );
+              }
+            },
           ),
         ],
+      ),
+    );
+  }
+
+  void _showCurrencyDialog(String currentCurrency, bool isPro) {
+    final currencies = ['MZN', 'USD', 'EUR', 'ZAR', 'AOA'];
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Selecionar Moeda'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: currencies.length,
+            itemBuilder: (context, index) {
+              final curr = currencies[index];
+              final isFreeCurrency = curr == 'MZN';
+              
+              return ListTile(
+                title: Text(curr),
+                leading: Radio<String>(
+                  value: curr,
+                  groupValue: currentCurrency,
+                  onChanged: (value) {
+                    if (!isPro && !isFreeCurrency) {
+                      Navigator.pop(context);
+                      ProGateHelper.showUpgradeDialog(context, 'Múltiplas Moedas ($curr)');
+                      return;
+                    }
+                    if (value != null) {
+                      ref.read(userSettingsProvider.notifier).updateCurrency(value);
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+                trailing: (!isPro && !isFreeCurrency) ? const Icon(Icons.workspace_premium, color: Colors.amber, size: 16) : null,
+                onTap: () {
+                   if (!isPro && !isFreeCurrency) {
+                      Navigator.pop(context);
+                      ProGateHelper.showUpgradeDialog(context, 'Múltiplas Moedas ($curr)');
+                      return;
+                    }
+                    ref.read(userSettingsProvider.notifier).updateCurrency(curr);
+                    Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
