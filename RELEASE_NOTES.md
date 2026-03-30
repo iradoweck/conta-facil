@@ -4,6 +4,22 @@ Este documento regista a evolução do projeto **Conta Fácil**, desde o protót
 
 ---
 
+## ⭐ v1.4.0 (Funcionalidades PRO & Detalhes) - 30/03/2026
+
+### 💎 Modelo de Subscrição (Gating)
+- **Restrição de Contexto**: A opção de visualizar "Ambos" (Negócio + Pessoal) simultaneamente agora é um recurso exclusivo PRO em todas as telas (Dashboard, Transações e Relatórios).
+- **Filtros Temporais Avançados**: O "Período Personalizado" em Relatórios e Análises foi movido para o tier PRO, incentivando o upgrade para análises profundas.
+- **Visual Gating**: Implementação de ícones de cadeado e diálogos de "Upgrade" contextuais para uma experiência de venda não-intrusiva.
+
+### 📝 Gestão de Transações
+- **Central de Adição**: Novo Botão de Ação Flutuante (FAB) na tela de Todas as Transações para registo rápido sem voltar ao dashboard.
+- **Detalhes da Transação (PRO)**: Nova tela de visualização detalhada que exibe metadados completos, ID da transação e categorização clara.
+
+### 🛠️ Arquitetura
+- **Pro Gate Helper**: Criação de utilitário centralizado para gestão de permissões e diálogos de subscrição.
+
+---
+
 ## 🔝 v1.3.0 (Escalabilidade & Refinamento UI) - 30/03/2026
 
 ### 📊 Dashboard & Navegação

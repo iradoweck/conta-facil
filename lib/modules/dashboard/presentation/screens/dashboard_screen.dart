@@ -26,6 +26,7 @@ import 'package:conta_facil/modules/intelligence/education/presentation/screens/
 import 'package:conta_facil/modules/intelligence/education/domain/models/education_item.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:conta_facil/modules/intelligence/education/presentation/screens/education_screens.dart';
+import 'package:conta_facil/shared/utils/pro_gate_helper.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -122,26 +123,43 @@ class DashboardScreen extends ConsumerWidget {
 
   Widget _buildContextSwitcher(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(dashFilterProvider);
+    final isPro = ref.watch(subscriptionProvider) == SubscriptionPlan.pro;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Center(
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: SegmentedButton<bool?>(
-            segments: const [
-              ButtonSegment(value: true, label: Text('Negócio'), icon: Icon(Icons.business_center)),
-              ButtonSegment(value: false, label: Text('Pessoal'), icon: Icon(Icons.person)),
-              ButtonSegment(value: null, label: Text('Ambos'), icon: Icon(Icons.all_inclusive)),
+            segments: [
+              const ButtonSegment(value: true, label: Text('Negócio'), icon: Icon(Icons.business_center)),
+              const ButtonSegment(value: false, label: Text('Pessoal'), icon: Icon(Icons.person)),
+              ButtonSegment(
+                value: null, 
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Ambos'),
+                    if (!isPro) ...[const SizedBox(width: 4), const Icon(Icons.lock_outline, size: 12, color: Colors.grey)],
+                  ],
+                ),
+                icon: const Icon(Icons.all_inclusive)
+              ),
             ],
             selected: {filter},
             onSelectionChanged: (newSelection) {
-              ref.read(dashFilterProvider.notifier).state = newSelection.first;
+              final val = newSelection.first;
+              if (val == null && !isPro) {
+                ProGateHelper.showUpgradeDialog(context, 'Visão Global (Ambos)');
+                return;
+              }
+              ref.read(dashFilterProvider.notifier).state = val;
             },
             style: SegmentedButton.styleFrom(
               backgroundColor: Colors.white,
-              selectedBackgroundColor: AppColors.primary.withOpacity(0.1),
+              selectedBackgroundColor: AppColors.primary.withValues(alpha: 0.1),
               selectedForegroundColor: AppColors.primary,
-              side: BorderSide(color: Colors.grey.withOpacity(0.2)),
+              side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
             ),
           ),
         ),

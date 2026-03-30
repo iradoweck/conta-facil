@@ -7,6 +7,7 @@ import 'package:conta_facil/shared/components/fintech_card.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:conta_facil/core/providers/subscription_provider.dart';
+import 'package:conta_facil/shared/utils/pro_gate_helper.dart';
 
 class FinancialReportsScreen extends ConsumerStatefulWidget {
   const FinancialReportsScreen({super.key});
@@ -78,6 +79,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(transactionsProvider);
     final currencyFormat = NumberFormat.currency(locale: 'pt_MZ', symbol: 'MT');
+    final isPro = ref.watch(subscriptionProvider) == SubscriptionPlan.pro;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -101,8 +103,8 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
       ),
       body: Column(
         children: [
-          _buildContextSegment(),
-          _buildTimeCarousel(),
+          _buildContextSegment(isPro),
+          _buildTimeCarousel(isPro),
           Expanded(
             child: transactionsAsync.when(
               data: (transactions) {
@@ -133,19 +135,33 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
     );
   }
 
-  Widget _buildContextSegment() {
+  Widget _buildContextSegment(bool isPro) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: SegmentedButton<bool?>(
-        segments: const [
-          ButtonSegment(value: true, label: Text('Negócio')),
-          ButtonSegment(value: false, label: Text('Pessoal')),
-          ButtonSegment(value: null, label: Text('Ambos')),
+        segments: [
+          const ButtonSegment(value: true, label: Text('Negócio')),
+          const ButtonSegment(value: false, label: Text('Pessoal')),
+          ButtonSegment(
+            value: null, 
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Ambos'),
+                if (!isPro) ...[const SizedBox(width: 4), const Icon(Icons.lock_outline, size: 12, color: Colors.grey)],
+              ],
+            )
+          ),
         ],
         selected: {_isBusiness},
         onSelectionChanged: (Set<bool?> selection) {
+          final val = selection.first;
+          if (val == null && !isPro) {
+             ProGateHelper.showUpgradeDialog(context, 'Visão Combinada (Ambos)');
+             return;
+          }
           setState(() {
-            _isBusiness = selection.first;
+            _isBusiness = val;
           });
         },
         style: SegmentedButton.styleFrom(
@@ -158,7 +174,7 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
     );
   }
 
-  Widget _buildTimeCarousel() {
+  Widget _buildTimeCarousel(bool isPro) {
     final presets = ['7 Dias', 'Este Mês', '3 Meses', '1 Ano', 'Personalizado'];
     return SizedBox(
       height: 60,
@@ -169,14 +185,25 @@ class _FinancialReportsScreenState extends ConsumerState<FinancialReportsScreen>
         itemBuilder: (context, index) {
           final preset = presets[index];
           final isSelected = _rangePreset == preset;
+          final isLocked = preset == 'Personalizado' && !isPro;
+
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text(preset, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+              label: Row(
+                children: [
+                  Text(preset, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                  if (isLocked) ...[const SizedBox(width: 4), const Icon(Icons.lock_outline, size: 12, color: Colors.grey)],
+                ],
+              ),
               selected: isSelected,
               selectedColor: AppColors.primary.withValues(alpha: 0.15),
               labelStyle: TextStyle(color: isSelected ? AppColors.primary : Colors.black87),
               onSelected: (selected) {
+                if (isLocked) {
+                  ProGateHelper.showUpgradeDialog(context, 'Período Personalizado');
+                  return;
+                }
                 if (preset == 'Personalizado') {
                   _selectCustomRange();
                 } else {

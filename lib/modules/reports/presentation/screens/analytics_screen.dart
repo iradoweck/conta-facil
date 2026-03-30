@@ -10,6 +10,8 @@ import 'package:conta_facil/modules/reports/domain/services/report_service.dart'
 import 'package:conta_facil/modules/reports/domain/engines/insight_engine.dart';
 import 'package:conta_facil/shared/models/finance_account.dart';
 import 'package:conta_facil/modules/settings/domain/models/settings_models.dart';
+import 'package:conta_facil/core/providers/subscription_provider.dart';
+import 'package:conta_facil/shared/utils/pro_gate_helper.dart';
 import 'package:conta_facil/modules/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:conta_facil/modules/transactions/presentation/screens/all_transactions_screen.dart';
 import 'package:conta_facil/modules/reports/presentation/screens/financial_reports_screen.dart';
@@ -50,12 +52,13 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final settings = ref.watch(userSettingsProvider); // From transaction_provider.dart
     final currencyFormat = NumberFormat.currency(locale: 'pt_MZ', symbol: 'MT');
+    final isPro = ref.watch(subscriptionProvider) == SubscriptionPlan.pro;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Estudo das minhas Finanças')),
       body: Column(
         children: [
-          _buildFilters(),
+          _buildFilters(isPro),
           Expanded(
             child: transactionsAsync.when(
               data: (transactions) {
@@ -152,7 +155,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFilters(bool isPro) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -168,9 +171,23 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               decoration: const InputDecoration(labelText: 'Período', border: OutlineInputBorder()),
               items: TimeFilter.values.map((f) => DropdownMenuItem(
                 value: f, 
-                child: Text(TimeFilterEngine.getFilterLabel(f))
+                child: Row(
+                  children: [
+                    Text(TimeFilterEngine.getFilterLabel(f)),
+                    if (f == TimeFilter.custom && !isPro) ...[
+                      const SizedBox(width: 8),
+                      const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+                    ],
+                  ],
+                )
               )).toList(),
-              onChanged: (f) => f == TimeFilter.custom ? _selectCustomRange() : setState(() => _timeFilter = f!),
+              onChanged: (f) {
+                if (f == TimeFilter.custom && !isPro) {
+                  ProGateHelper.showUpgradeDialog(context, 'Período Personalizado');
+                  return;
+                }
+                f == TimeFilter.custom ? _selectCustomRange() : setState(() => _timeFilter = f!);
+              },
             ),
           ),
           const SizedBox(width: 8),
@@ -179,12 +196,26 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
               isExpanded: true,
               value: _accountTypeFilter,
               decoration: const InputDecoration(labelText: 'Contexto', border: OutlineInputBorder()),
-              items: const [
-                DropdownMenuItem(value: AccountType.business, child: Text('Negócio')),
-                DropdownMenuItem(value: AccountType.personal, child: Text('Pessoal')),
-                DropdownMenuItem(value: null, child: Text('Ambos')),
+              items: [
+                const DropdownMenuItem(value: AccountType.business, child: Text('Negócio')),
+                const DropdownMenuItem(value: AccountType.personal, child: Text('Pessoal')),
+                DropdownMenuItem(value: null, child: Row(
+                  children: [
+                    const Text('Ambos'),
+                    if (!isPro) ...[
+                      const SizedBox(width: 8),
+                      const Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+                    ],
+                  ],
+                )),
               ],
-              onChanged: (val) => setState(() => _accountTypeFilter = val),
+              onChanged: (val) {
+                if (val == null && !isPro) {
+                  ProGateHelper.showUpgradeDialog(context, 'Filtro Combinado (Ambos)');
+                  return;
+                }
+                setState(() => _accountTypeFilter = val);
+              },
             ),
           ),
         ],
