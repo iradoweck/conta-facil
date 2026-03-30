@@ -79,17 +79,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       pinned: true,
       stretch: true,
       backgroundColor: AppColors.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        centerTitle: true,
-        title: const Text(
-          'Meu Perfil',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            shadows: [Shadow(color: Colors.black26, blurRadius: 10)],
-          ),
-        ),
+      flexibleSpace: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final isCollapsed = constraints.biggest.height <= 
+            kToolbarHeight + MediaQuery.of(context).padding.top + 20;
+          return FlexibleSpaceBar(
+            centerTitle: true,
+            title: isCollapsed
+                ? const Text(
+                    'Meu Perfil',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      shadows: [Shadow(color: Colors.black26, blurRadius: 10)],
+                    ),
+                  )
+                : const SizedBox.shrink(),
         background: Stack(
           fit: StackFit.expand,
           children: [
@@ -176,9 +182,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
+      );
+    },
+  ),
+);
+}
 
   Widget _buildSectionTitle(String title) {
     return Padding(

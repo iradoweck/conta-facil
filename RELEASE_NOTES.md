@@ -17,6 +17,17 @@ Este documento regista a evolução do projeto **Conta Fácil**, desde o protót
 
 ### 🛠️ Arquitetura
 - **Pro Gate Helper**: Criação de utilitário centralizado para gestão de permissões e diálogos de subscrição.
+- **Componentização Avançada**: Introdução nativa do componente flexível `IconPickerDialog`.
+
+### 👤 Otimização do Perfil & Segurança
+- **Design Responsivo**: Correção de sobreposição (UI overflow) no cabeçalho onde a biografia e nome se misturavam. Novo título estático "Meu Perfil" ativo no scroll.
+- **Encaminhamento do Chat**: O atalho "Portal do Edmilson" faz bypass ao portal educacional e roteia logo para a experiência *Real-time Chat* (`ChatScreen`).
+- **Media Gate (PRO)**: Bloqueio implementado nativamente contra uso pesado de armazenamento. Gifs animados e fotos ricas restritos apenas para Contas PRO. Contas free operam sob limite rígido 2MB png/jpg.
+- **Eliminação Consciente**: O fluxo "Eliminar Minha Conta" agora vive num botão destacado (longe do "Sair"), acompanhado de um Alerta de Despedida que simula uma proteção de arrependimentos de 3 dias sem apagar no imediato os dados do utilizador.
+
+### 🛑 Limitações de Escalabilidade (Free vs PRO)
+- **Categorias Inteligentes**: Configuração do novo utilitário de seleção iconográfica (`IconPickerDialog`) exclusivo da subscrição PRO. O nível free está limitado ao máximo de 5 categorias adicionais com ícones estáticos base.
+- **Tetos de Operação (Limites Táticos)**: Utilizadores de nível Base/Free agora limitados em rastreio paralelo de apenas 5 Despesas Fixas e 3 Metas Financeiras ativas. Modo escalabilidade ilimitada ativado exclusivamente no PRO.
 
 ---
 

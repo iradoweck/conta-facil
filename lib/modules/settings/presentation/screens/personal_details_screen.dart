@@ -78,8 +78,8 @@ class _PersonalDetailsScreenState extends ConsumerState<PersonalDetailsScreen> {
 
       if (image == null) return;
 
-      // 1. Validate Format (GIF only for Pro)
-      final extension = image.path.split('.').last.toLowerCase();
+      // 1. Validate Format (GIF only for Pro) - Use .name to support Flutter Web Blob URLs
+      final extension = image.name.split('.').last.toLowerCase();
       final allowedExtensions = isPro ? ['jpg', 'jpeg', 'png', 'gif'] : ['jpg', 'jpeg', 'png'];
       
       if (!allowedExtensions.contains(extension)) {
